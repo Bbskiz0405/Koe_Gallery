@@ -12,8 +12,19 @@ function Brand({ onClick }) {
 }
 
 // ───── PHOTO PLACEHOLDER ─────
-// Subtly-striped gradient placeholder with mono label
-function PhotoPh({ seed = 0, label, corner }) {
+// Shows a real image when `url` is provided, otherwise gradient placeholder.
+function PhotoPh({ seed = 0, label, corner, url }) {
+  if (url) {
+    return (
+      <div className="photo-ph" style={{ background: gradientFor(seed) }}>
+        <img
+          src={url} alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+        {corner && <div className="corner">{corner}</div>}
+      </div>
+    );
+  }
   return (
     <div className="photo-ph" style={{ background: gradientFor(seed) }}>
       <div className="stripe" />
@@ -84,7 +95,6 @@ function AlbumCard({ album, onOpen }) {
       <div className="cover">
         <div className="ph"><PhotoPh seed={album.cover} corner={album.id.toUpperCase()} /></div>
         <div className="floats">
-          {/* tiny decorative stickers preview */}
           {album.tag === "fans" && (
             <div style={{ position: "absolute", top: "12%", right: "10%", transform: "rotate(-12deg)" }}>
               <stickers.StarTwinkle size={36} />
@@ -107,7 +117,7 @@ function AlbumCard({ album, onOpen }) {
     </div>
   );
 }
-// little shim for sticker rendering in card; expose via window
+
 const stickers = {
   StarTwinkle: ({ size }) => (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
@@ -151,17 +161,14 @@ function PlacedSticker({ data, selected, onSelect, onChange, onDelete, container
       const newY = s.startData.y + (dy / s.containerRect.height) * 100;
       onChange(data.id, { x: Math.max(0, Math.min(100, newX)), y: Math.max(0, Math.min(100, newY)) });
     } else if (s.mode === "rotate") {
-      // rotate+scale by dragging the bottom-right handle
       const cx = s.containerRect.left + (s.startData.x / 100) * s.containerRect.width;
-      const cy = s.containerRect.top + (s.startData.y / 100) * s.containerRect.height;
-      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+      const cy = s.containerRect.top  + (s.startData.y / 100) * s.containerRect.height;
+      const angle      = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
       const startAngle = Math.atan2(s.startY - cy, s.startX - cx) * 180 / Math.PI;
       const newRot = s.startData.rot + (angle - startAngle);
-      // scale via distance change
       const startDist = Math.hypot(s.startX - cx, s.startY - cy);
-      const currDist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      const scaleFactor = currDist / Math.max(1, startDist);
-      const newScale = Math.max(0.4, Math.min(3, s.startData.scale * scaleFactor));
+      const currDist  = Math.hypot(e.clientX - cx, e.clientY - cy);
+      const newScale  = Math.max(0.4, Math.min(3, s.startData.scale * (currDist / Math.max(1, startDist))));
       onChange(data.id, { rot: newRot, scale: newScale });
     }
   };
@@ -226,16 +233,50 @@ function StickerPanel({ activePack, setActivePack, onPickSticker, selectedSticke
   );
 }
 
-// ───── COMMENTS LIST ─────
-function CommentsList() {
-  const [list, setList] = useState(MOCK_COMMENTS);
+// ───── COMMENTS LIST (Firestore-backed) ─────
+function CommentsList({ photoId }) {
+  const [list, setList]   = useState(MOCK_COMMENTS);
   const [draft, setDraft] = useState("");
+
+  // Real-time comments from Firestore
+  useEffect(() => {
+    if (!photoId) return;
+    const unsub = db.collection("comments")
+      .where("photoId", "==", photoId)
+      .orderBy("createdAt", "asc")
+      .onSnapshot(
+        snap => {
+          const items = snap.docs.map(doc => {
+            const d = doc.data();
+            const t = d.createdAt?.toDate?.();
+            return {
+              name:  d.name  || "ECHO",
+              color: d.color || "#f9a8d4",
+              time:  t ? t.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "now",
+              text:  d.text  || "",
+            };
+          });
+          if (items.length > 0) setList(items);
+        },
+        err => console.error("Comments load:", err)
+      );
+    return unsub;
+  }, [photoId]);
+
   const submit = (e) => {
     e.preventDefault();
     if (!draft.trim()) return;
-    setList([...list, { name: "你", color: "#fef3c7", time: "now", text: draft.trim() }]);
+    const colors = ["#f9a8d4", "#d4b8f2", "#fde7d4", "#fbcfe8"];
+    db.collection("comments").add({
+      photoId: photoId || "unknown",
+      name:  "訪客 ECHO",
+      color: colors[Math.floor(Math.random() * colors.length)],
+      text:  draft.trim(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).catch(e => console.error("Post comment:", e));
     setDraft("");
   };
+
   return (
     <>
       <div className="pane">

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(npx --yes serve -p 5500 -s .)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5500/)",
+      "Bash(node *)",
+      "PowerShell(netstat *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list)",
+      "Bash(firebase projects:create *)",
+      "Bash(firebase use *)",
+      "Bash(firebase init *)",
+      "Bash(firebase apps:create *)",
+      "Bash(firebase apps:sdkconfig *)",
+      "Bash(firebase firestore:databases:create --location=nam5 --project koe-gallery-echo)",
+      "Bash(firebase firestore:databases:create \"\\(default\\)\" --location=nam5 --project koe-gallery-echo)",
+      "Bash(firebase deploy *)"
+    ]
+  }
+}
