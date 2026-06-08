@@ -33,7 +33,7 @@ function CoverContent({ memorial = true }) {
           <div className="cv-title-koe">KOE</div>
         </div>
         <div className="cv-title-en">
-          <em>kokoro·saki</em>  ⟡  voice from a faraway universe
+          voice from a faraway universe
         </div>
         <div className="cv-divider">
           <span className="cv-rule" />

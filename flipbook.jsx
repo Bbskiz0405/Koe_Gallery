@@ -15,12 +15,27 @@ function Daisy({ size = 56, petalFill = "#fff", coreFill = "#f7c948", stroke = "
   );
 }
 
-// ─── photo frame for book page ───
-function BookPhoto({ seed, photo, onOpen, stickerCount = 0, label, dateStr, className = "", style }) {
+// ─── photo frame for book page — renders placed stickers too ───
+function BookPhoto({ seed, photo, onOpen, label, dateStr, className = "", style, stickersOnPhoto }) {
   return (
     <div className={`frame fb-frame-click ${className}`} onClick={onOpen} style={style}>
       <PhotoPh seed={seed} url={photo?.url} label={label || photoLabel(seed)} corner={dateStr} />
-      {stickerCount > 0 && <div className="sticker-count">✦ {stickerCount}</div>}
+      {stickersOnPhoto && stickersOnPhoto.length > 0 && (
+        <div className="book-stickers">
+          {stickersOnPhoto.map(s => {
+            const R = s.render;
+            return R ? (
+              <div key={s.id} className="placed-mini"
+                style={{ left: `${s.x}%`, top: `${s.y}%`, '--r': `${s.rot}deg`, '--s': s.scale }}>
+                <R />
+              </div>
+            ) : null;
+          })}
+        </div>
+      )}
+      {stickersOnPhoto && stickersOnPhoto.length > 0 && (
+        <div className="sticker-count">✦ {stickersOnPhoto.length}</div>
+      )}
     </div>
   );
 }
@@ -33,8 +48,7 @@ function buildPages(album) {
   pages.push({ kind: "first-content", album });
 
   const layouts = ["photo-1", "photo-3", "photo-2", "photo-4", "photo-1", "photo-2", "photo-3"];
-  let cursor = 0;
-  let layoutIdx = 0;
+  let cursor = 0, layoutIdx = 0;
   while (cursor < seeds.length) {
     const kind = layouts[layoutIdx % layouts.length];
     const need = kind === "photo-1" ? 1 : kind === "photo-2" ? 2 : kind === "photo-3" ? 3 : 4;
@@ -55,10 +69,6 @@ function buildPages(album) {
 
 function noteForAlbum(albumId, n) {
   const notes = {
-    a01: [
-      { title: "深夜のメモ", body: "凌晨四點，便利商店的燈光像舞台。\n寫了三段 demo，刪了兩段。\n剩下的那一段，獻給今晚還醒著的你。" },
-      { title: "stardust 03", body: "今天的櫻花\n與一顆走丟的星星\n說了悄悄話。" },
-    ],
     memorial: [
       { title: "心の花を咲かせる声", body: "在夢的宇宙中旅行的異星 VSinger。\n從藍星啟程的那一晚，我們聽見了你的歌聲。\n謝謝你來過。" },
       { title: "ECHO ⟡", body: "把貼紙貼在這裡吧。\n寫下你想說的話。\n我們都是 ECHO。" },
@@ -69,22 +79,10 @@ function noteForAlbum(albumId, n) {
 }
 
 // ─── page renderers ───
-function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCounts, albumId, photosMap }) {
+function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, albumId, photosMap, placedStickers, getPhotoKey }) {
   if (page.kind === "blank") return null;
   if (page.kind === "inside-cover")  return <InsideCover />;
   if (page.kind === "first-content") return <FirstContentPage />;
-
-  if (page.kind === "cover") {
-    return (
-      <div className="tpl-cover">
-        <div className="stamp">∅.◦  KOE  album  ·  {page.album.id.toUpperCase()}</div>
-        <h1>{page.album.title}</h1>
-        <div className="jp-sub">{page.album.titleEn} ⟡ {page.album.tag}</div>
-        <div className="daisy-stack"><Daisy size={120} /></div>
-        <div className="credit">心咲KOE · echo's keepsake</div>
-      </div>
-    );
-  }
 
   if (page.kind === "note") {
     return (
@@ -107,19 +105,16 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCo
         <div className="echo">END OF MEMORIAL BOOK</div>
         <div className="nums">
           <div><div className="n">{page.album.count}</div><div className="l">photos</div></div>
-          <div><div className="n">{42 + (page.album.cover * 17)}</div><div className="l">stickers</div></div>
-          <div><div className="n">{18 + (page.album.cover * 9)}</div><div className="l">comments</div></div>
+          <div><div className="n">{Object.values(placedStickers || {}).reduce((a, b) => a + b.length, 0)}</div><div className="l">stickers</div></div>
         </div>
       </div>
     );
   }
 
-  // ── photo layouts ──
-  const getPhoto = (seed) => photosMap?.[seed] || null;
-  const stick = (seed) => {
-    const photo = getPhoto(seed);
-    const key = photo?.id || `${albumId}:${seed}`;
-    return photoStickerCounts[key] || 0;
+  const getPhoto  = (seed) => photosMap?.[seed] || null;
+  const getStickers = (seed) => {
+    const key = getPhotoKey ? getPhotoKey(seed) : `${albumId}:${seed}`;
+    return placedStickers?.[key] || [];
   };
   const dates = ["10.18", "10.21", "10.23", "11.02", "11.07", "11.14"];
 
@@ -129,9 +124,10 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCo
       <div className={`tpl-photo ${side} tpl-1`}>
         <div className="head"><span className="num">{photoLabel(s)}</span><span>·</span><span>{dates[s % dates.length]}</span></div>
         <div className="grid">
-          <BookPhoto seed={s} photo={getPhoto(s)} stickerCount={stick(s)} onOpen={() => onOpenPhoto(s)} dateStr={`#${pageNum}`} />
+          <BookPhoto seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)}
+            onOpen={() => onOpenPhoto(s)} dateStr={`#${pageNum}`} />
           <div className="cap-row">
-            <span className="date">{dates[s % dates.length]} · {page.album?.tag || ""}</span>
+            <span className="date">{dates[s % dates.length]}</span>
             <span className="title">{page.caps[0]}</span>
           </div>
         </div>
@@ -144,7 +140,8 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCo
         <div className="head"><span className="num">SPREAD ·</span><span>{page.photos.map(photoLabel).join(" · ")}</span></div>
         <div className="grid">
           {page.photos.map((s, i) => (
-            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickerCount={stick(s)} onOpen={() => onOpenPhoto(s)} dateStr={dates[(s + i) % dates.length]} />
+            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)}
+              onOpen={() => onOpenPhoto(s)} dateStr={dates[(s + i) % dates.length]} />
           ))}
         </div>
       </div>
@@ -156,9 +153,9 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCo
       <div className={`tpl-photo ${side} tpl-3`}>
         <div className="head"><span className="num">SPREAD ·</span><span>3 photos</span></div>
         <div className="grid">
-          {a !== undefined && <BookPhoto seed={a} photo={getPhoto(a)} className="span2" stickerCount={stick(a)} onOpen={() => onOpenPhoto(a)} />}
-          {b !== undefined && <BookPhoto seed={b} photo={getPhoto(b)} stickerCount={stick(b)} onOpen={() => onOpenPhoto(b)} />}
-          {c !== undefined && <BookPhoto seed={c} photo={getPhoto(c)} stickerCount={stick(c)} onOpen={() => onOpenPhoto(c)} />}
+          {a !== undefined && <BookPhoto seed={a} photo={getPhoto(a)} stickersOnPhoto={getStickers(a)} className="span2" onOpen={() => onOpenPhoto(a)} />}
+          {b !== undefined && <BookPhoto seed={b} photo={getPhoto(b)} stickersOnPhoto={getStickers(b)} onOpen={() => onOpenPhoto(b)} />}
+          {c !== undefined && <BookPhoto seed={c} photo={getPhoto(c)} stickersOnPhoto={getStickers(c)} onOpen={() => onOpenPhoto(c)} />}
         </div>
       </div>
     );
@@ -169,7 +166,7 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, photoStickerCo
         <div className="head"><span className="num">SPREAD ·</span><span>4 photos · {dates[page.photos[0] % dates.length]}</span></div>
         <div className="grid">
           {page.photos.map((s, i) => (
-            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickerCount={stick(s)} onOpen={() => onOpenPhoto(s)} />
+            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)} onOpen={() => onOpenPhoto(s)} />
           ))}
         </div>
       </div>
@@ -211,9 +208,9 @@ function PageFaceBack({ page, side, pageNum, totalPages, ...rest }) {
 }
 
 // ─── FlipBook ───
-function FlipBook({ album, onOpenPhoto, photoStickerCounts, photosMap }) {
-  const pages = fbUseRef(buildPages(album)).current;
-  const total = pages.length;
+function FlipBook({ album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
+  const pages       = fbUseRef(buildPages(album)).current;
+  const total       = pages.length;
   const totalSpreads = total / 2;
 
   const [spread, setSpread] = fbUseState(0);
@@ -225,13 +222,11 @@ function FlipBook({ album, onOpenPhoto, photoStickerCounts, photosMap }) {
     if (anim) return;
     const target = spread + delta;
     if (target < 0 || target >= totalSpreads) return;
-    const dir = delta > 0 ? "next" : "prev";
-    setAnim({ dir, target });
+    setAnim({ dir: delta > 0 ? "next" : "prev", target });
     setTimeout(() => { setSpread(target); setAnim(null); }, 900);
   };
 
-  const cL = pages[spread * 2];
-  const cR = pages[spread * 2 + 1];
+  const cL = pages[spread * 2], cR = pages[spread * 2 + 1];
   const tL = anim ? pages[anim.target * 2] : null;
   const tR = anim ? pages[anim.target * 2 + 1] : null;
 
@@ -249,15 +244,15 @@ function FlipBook({ album, onOpenPhoto, photoStickerCounts, photosMap }) {
     leaf = { front: tR, frontNum: anim.target * 2 + 2, back: cL, backNum: spread * 2 + 1 };
   }
 
-  const progress = (spread + 1) / totalSpreads;
-  const commonProps = { onOpenPhoto, photoStickerCounts, albumId: album.id, totalPages: total, photosMap };
+  const progress    = (spread + 1) / totalSpreads;
+  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey };
 
   return (
     <div className="flipbook-wrap">
       <div className="flipbook-table">
         <div className="flipbook">
           <div className="fb-shadow-base" />
-          <div className="fb-static left"><PageFace page={bgLeft} side="left" pageNum={bgLeftNum} {...commonProps} /></div>
+          <div className="fb-static left"><PageFace page={bgLeft}  side="left"  pageNum={bgLeftNum}  {...commonProps} /></div>
           <div className="fb-static right"><PageFace page={bgRight} side="right" pageNum={bgRightNum} {...commonProps} /></div>
           <div className="fb-spine" />
           {leaf && (
@@ -267,10 +262,10 @@ function FlipBook({ album, onOpenPhoto, photoStickerCounts, photosMap }) {
             </div>
           )}
           <div className="fb-corner prev" onClick={() => go(-1)} style={{ opacity: spread === 0 ? 0.3 : 1, pointerEvents: spread === 0 ? "none" : "auto" }}>
-            <div className="fb-corner-arrow"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+            <div className="fb-corner-arrow"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg></div>
           </div>
           <div className="fb-corner next" onClick={() => go(1)} style={{ opacity: spread >= totalSpreads - 1 ? 0.3 : 1, pointerEvents: spread >= totalSpreads - 1 ? "none" : "auto" }}>
-            <div className="fb-corner-arrow"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+            <div className="fb-corner-arrow"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg></div>
           </div>
         </div>
       </div>

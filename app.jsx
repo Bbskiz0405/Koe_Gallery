@@ -125,6 +125,8 @@ function App() {
             onUpload={() => setUploadOpen(true)}
             onOpenPhoto={openPhoto}
             photoStickerCounts={photoStickerCounts}
+            placedStickers={placedStickers}
+            setPlacedStickers={setPlacedStickers}
             photosMap={photosMap}
             getPhotoKey={getPhotoKey}
           />
