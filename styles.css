@@ -1618,7 +1618,18 @@ button { font-family: inherit; cursor: pointer; }
   .book-view-top .layout-switch { flex-shrink: 0; }
   .book-view-top .layout-switch button { padding: 5px 8px; font-size: 9px; }
 
-  /* ── Mobile single-page flipbook ── */
+  /* ── Mobile spread flipbook (scaled two-page) ── */
+  .flipbook-mobile-wrap {
+    width: calc(100vw - 24px);
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    /* height driven by JS scale */
+  }
+
+  /* ── (legacy single-page styles kept but unused) ── */
   .flipbook-mobile {
     position: relative;
     width: calc(100vw - 24px);

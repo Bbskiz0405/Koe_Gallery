@@ -218,48 +218,71 @@ function useMobile() {
   return mobile;
 }
 
-// ─── Mobile single-page viewer ───
+// ─── Mobile spread viewer — same two-page spread, scaled to fit ───
 function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
-  const total = pages.length;
-  const [pageIdx, setPageIdx] = fbUseState(0);
-  const [animDir, setAnimDir] = fbUseState(null);
+  const total        = pages.length;
+  const totalSpreads = Math.floor(total / 2);
+  const [spread, setSpread] = fbUseState(0);
+  const [fading, setFading] = fbUseState(false);
+  const wrapRef = fbUseRef(null);
+  const [scale, setScale]   = fbUseState(0.38);
+
+  fbUseEffect(() => {
+    const update = () => {
+      if (wrapRef.current) setScale(wrapRef.current.offsetWidth / 920);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   const go = (delta) => {
-    if (animDir) return;
-    const target = pageIdx + delta;
-    if (target < 0 || target >= total) return;
-    setPageIdx(target);
-    setAnimDir(delta > 0 ? "next" : "prev");
-    setTimeout(() => setAnimDir(null), 350);
+    if (fading) return;
+    const target = spread + delta;
+    if (target < 0 || target >= totalSpreads) return;
+    setFading(true);
+    setTimeout(() => { setSpread(target); setFading(false); }, 260);
   };
 
-  const page = pages[pageIdx];
+  const lPage = pages[spread * 2];
+  const rPage = pages[spread * 2 + 1];
   const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey };
 
   return (
     <div className="flipbook-wrap">
-      <div className="flipbook-mobile">
-        <div key={pageIdx} className={`fb-mobile-page${animDir ? ` anim-in-${animDir}` : ""}`}>
-          <PageFace page={page} side="right" pageNum={pageIdx + 1} {...commonProps} />
-        </div>
-        <div className="fb-corner prev" onClick={() => go(-1)}
-          style={{ opacity: pageIdx === 0 ? 0.3 : 1, pointerEvents: pageIdx === 0 ? "none" : "auto" }}>
-          <div className="fb-corner-arrow">
-            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg>
-          </div>
-        </div>
-        <div className="fb-corner next" onClick={() => go(1)}
-          style={{ opacity: pageIdx >= total - 1 ? 0.3 : 1, pointerEvents: pageIdx >= total - 1 ? "none" : "auto" }}>
-          <div className="fb-corner-arrow">
-            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg>
+      <div className="flipbook-table" style={{ padding: "16px 8px 56px" }}>
+        <div className="flipbook-mobile-wrap" ref={wrapRef} style={{ height: `${600 * scale}px` }}>
+          <div className="flipbook"
+            style={{ transform: `scale(${scale})`, transformOrigin: "top left",
+                     opacity: fading ? 0 : 1, transition: "opacity 0.26s ease" }}>
+            <div className="fb-shadow-base" />
+            <div className="fb-static left">
+              <PageFace page={lPage} side="left"  pageNum={spread * 2 + 1} {...commonProps} />
+            </div>
+            <div className="fb-static right">
+              <PageFace page={rPage} side="right" pageNum={spread * 2 + 2} {...commonProps} />
+            </div>
+            <div className="fb-spine" />
+            <div className="fb-corner prev" onClick={() => go(-1)}
+              style={{ opacity: spread === 0 ? 0.3 : 1, pointerEvents: spread === 0 ? "none" : "auto" }}>
+              <div className="fb-corner-arrow">
+                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"/></svg>
+              </div>
+            </div>
+            <div className="fb-corner next" onClick={() => go(1)}
+              style={{ opacity: spread >= totalSpreads - 1 ? 0.3 : 1, pointerEvents: spread >= totalSpreads - 1 ? "none" : "auto" }}>
+              <div className="fb-corner-arrow">
+                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"/></svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <div className="fb-nav">
-        <button className="btn" onClick={() => go(-1)} disabled={pageIdx === 0}>← prev</button>
-        <div className="scrub"><div className="fill" style={{ width: `${(pageIdx + 1) / total * 100}%` }} /></div>
-        <div className="progress">{String(pageIdx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</div>
-        <button className="btn primary" onClick={() => go(1)} disabled={pageIdx >= total - 1}>next →</button>
+        <button className="btn" onClick={() => go(-1)} disabled={spread === 0}>← prev</button>
+        <div className="scrub"><div className="fill" style={{ width: `${(spread + 1) / totalSpreads * 100}%` }} /></div>
+        <div className="progress">{String(spread + 1).padStart(2, "0")} / {String(totalSpreads).padStart(2, "0")}</div>
+        <button className="btn primary" onClick={() => go(1)} disabled={spread >= totalSpreads - 1}>next →</button>
       </div>
     </div>
   );
