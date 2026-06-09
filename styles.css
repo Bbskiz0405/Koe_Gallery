@@ -592,6 +592,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ───── responsive trims ───── */
+/* (desktop trims live below; mobile section at end of file) */
 
 /* ════════════════════════════════════════════════════════════════
    LANDING — closed book + opening transition
@@ -1518,4 +1519,161 @@ button { font-family: inherit; cursor: pointer; }
 }
 @media (max-width: 720px) {
   .flipbook { height: 400px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  ≤ 600px
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── Global ── */
+  .app-nav { padding: 12px 18px; gap: 10px; }
+  .app-main { padding: 18px 16px 80px; }
+
+  /* ── Landing wrapper ── */
+  .landing { padding: 14px 18px 18px; }
+  .landing-meta-top .brand .b-mark { font-size: 18px; }
+  .landing-meta-bot { font-size: 9px; letter-spacing: 0.2em; }
+
+  /* Shrink the 3-D stage from 820×540 → 340×224  (scale ≈ 0.415) */
+  .landing-stage {
+    width: 340px; height: 224px;
+    perspective: 1200px;
+    -webkit-perspective: 1200px;
+  }
+  .landing.ori-floating .landing-stage {
+    transform: translateX(-85px) rotateX(2deg) rotateY(-4deg);
+    animation: book-float-sm 7s ease-in-out infinite;
+  }
+  @keyframes book-float-sm {
+    0%, 100% { transform: translateX(-85px) rotateX(2deg) rotateY(-4deg) translateY(0); }
+    50%       { transform: translateX(-85px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
+  }
+  .landing.ori-flat .landing-stage {
+    transform: translateX(-85px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
+  }
+  .landing.phase-lift .landing-stage,
+  .landing.phase-open .landing-stage,
+  .landing.phase-closing .landing-stage {
+    transform: translateX(0) rotateX(0) rotateY(0) rotateZ(0);
+    animation: none;
+  }
+
+  /* Decorative chrome proportional to the smaller stage */
+  .landing-thickness { left: calc(50% - 10px); width: 20px; }
+  .landing-page-edge { left: calc(50% + 4px); right: 4px; height: 4px; }
+  .landing-bookmark  { left: calc(50% + 44px); width: 12px; height: 90px; top: -4px; }
+
+  /* Cover content — fonts scale with the smaller book face */
+  .cover-content { inset: 12px; padding: 16px 14px; }
+  .cv-stamp  { font-size: 7px; letter-spacing: 0.16em; }
+  .cv-mark   { font-size: 16px; }
+  .cv-mid    { gap: 6px; padding: 6px 0; }
+  .cv-corner { width: 18px; height: 18px; }
+  .cv-divider .cv-rule { width: 30px; }
+  .cv-title-zh  { font-size: 38px; }
+  .cv-title-koe { font-size: 13px; letter-spacing: 0.14em; }
+  .cv-title-en  { font-size: 9px; }
+  .cv-tag-jp    { font-size: 13px; margin-top: 4px; }
+  .cv-tag-en    { font-size: 8px; }
+  .cv-years     { font-size: 11px; gap: 5px; }
+  .cv-credit    { font-size: 7px; }
+
+  /* Inside cover & first page */
+  .inside-cover  { padding: 24px 18px; gap: 10px; }
+  .ic-tag-jp     { font-size: 18px; }
+  .ic-tag-en     { font-size: 11px; }
+  .first-content { padding: 24px 18px; }
+  .fc-title      { font-size: 28px; margin: 8px 0 12px; }
+  .fc-body       { font-size: 11px; }
+  .fc-from       { font-size: 13px; }
+
+  /* Landing hint / open button */
+  .landing-hint         { padding: 10px 20px 8px; }
+  .landing-hint .lh-label { font-size: 14px; }
+  .landing-hint .lh-arrow { font-size: 14px; }
+
+  /* ── Book view (after opening) ── */
+  .book-close-btn { top: 14px; left: 14px; padding: 6px 10px 6px 8px; font-size: 9px; gap: 5px; }
+  .book-view      { padding: 12px 12px 60px; padding-top: 58px; }
+  .book-view-top  { padding: 8px 12px; gap: 6px; border-radius: var(--radius-lg); }
+  .book-view-top .brand .b-sub  { display: none; }
+  .book-view-top .brand .b-mark { font-size: 18px; }
+  .book-view-top .row { gap: 6px; }
+
+  /* ── Flipbook ── */
+  .flipbook-table { padding: 16px 8px 56px; }
+  .flipbook       { width: calc(100vw - 24px); max-width: 360px; height: 240px; }
+  .fb-page-inner  { inset: 14px 18px; }
+  .fb-page.page-left  .fb-page-inner { left: 18px; right: 22px; }
+  .fb-page.page-right .fb-page-inner { left: 22px; right: 18px; }
+  .fb-pagenum { font-size: 8px; bottom: 8px; }
+  .fb-page.page-left  .fb-pagenum { left: 18px; }
+  .fb-page.page-right .fb-pagenum { right: 18px; }
+  .fb-pageglyph { font-size: 8px; top: 14px; }
+  .fb-page.page-left  .fb-pageglyph { left: 18px; }
+  .fb-page.page-right .fb-pageglyph { right: 18px; }
+  .fb-corner { width: 50px; }
+  .fb-corner-arrow { width: 22px; height: 22px; bottom: 10px; }
+  .fb-corner.next .fb-corner-arrow { right: 8px; }
+  .fb-corner.prev .fb-corner-arrow { left: 8px; }
+  .fb-nav         { gap: 8px; margin-top: 14px; }
+  .fb-nav .scrub  { min-width: 100px; }
+  .fb-nav .progress { font-size: 9px; }
+
+  /* Page templates on book pages */
+  .tpl-cover      { padding: 24px 18px; }
+  .tpl-cover h1   { font-size: 32px; margin: 8px 0 0; }
+  .tpl-cover .jp-sub  { font-size: 11px; margin-top: 8px; }
+  .tpl-cover .stamp   { font-size: 8px; }
+  .tpl-preface        { padding: 28px 18px; }
+  .tpl-preface .tag-jp { font-size: 18px; }
+  .tpl-preface .tag-en { font-size: 12px; margin-top: 10px; }
+  .tpl-photo          { padding: 14px 16px; }
+  .tpl-photo.left     { padding-right: 20px; }
+  .tpl-photo.right    { padding-left: 20px; }
+  .tpl-1 .cap-row .title { font-size: 12px; }
+  .tpl-note           { padding: 24px 18px; }
+  .tpl-note .note-body { font-size: 11px; line-height: 24px; }
+  .tpl-closing        { padding: 28px 18px; }
+  .tpl-closing h2     { font-size: 22px; margin: 10px 0 4px; }
+  .tpl-closing .nums  { gap: 18px; margin-top: 20px; }
+  .tpl-closing .nums .n { font-size: 22px; }
+
+  /* ── Album / home ── */
+  .albums-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .home-hero   { padding: 20px 0 30px; gap: 16px; }
+  .home-hero h1 { font-size: 38px; margin: 8px 0 14px; }
+  .home-hero .lede { font-size: 14px; }
+  .hero-meta   { gap: 18px; margin-top: 20px; }
+  .hero-meta .stat .n { font-size: 24px; }
+  .section-head h2 { font-size: 24px; }
+  .album-head  { grid-template-columns: 1fr; gap: 12px; padding: 10px 0 20px; margin-bottom: 24px; }
+  .album-head h1 { font-size: 36px; }
+  .album-desc  { font-size: 13px; }
+  .album-head .actions { flex-wrap: wrap; }
+  .layout-switch button { padding: 5px 8px; font-size: 9px; letter-spacing: 0.1em; }
+
+  /* ── Photo grids ── */
+  .varied-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 60px; gap: 10px; }
+  .polaroids   { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
+  .polaroids .photo        { padding: 8px 8px 40px; }
+  .polaroids .photo .cap   { font-size: 16px; bottom: 12px; }
+  .polaroids .photo .tape  { width: 44px; height: 14px; top: -7px; }
+
+  /* ── Lightbox ── */
+  .lb-stage { padding: 16px 12px; }
+
+  /* ── Upload modal — slides up from bottom ── */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal          { border-radius: var(--radius-xl) var(--radius-xl) 0 0; max-height: 90vh; overflow-y: auto; }
+  .modal-head     { padding: 14px 18px; }
+  .modal-head h2  { font-size: 20px; }
+  .modal-body     { padding: 18px; }
+  .modal-foot     { padding: 12px 18px; flex-wrap: wrap; }
+  .modal-steps    { padding: 0 18px 14px; gap: 8px; }
+  .upload-preview-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .drop-zone      { padding: 32px 14px; }
+  .drop-zone h3   { font-size: 18px; }
+  .drop-zone .icon { width: 44px; height: 44px; margin-bottom: 12px; font-size: 22px; }
 }
