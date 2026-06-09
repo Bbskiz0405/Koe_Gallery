@@ -1595,16 +1595,33 @@ button { font-family: inherit; cursor: pointer; }
 
   /* ── Book view (after opening) ── */
   .book-close-btn { top: 14px; left: 14px; padding: 6px 10px 6px 8px; font-size: 9px; gap: 5px; }
-  .book-view      { padding: 12px 12px 60px; padding-top: 58px; }
-  .book-view-top  { padding: 8px 12px; gap: 6px; border-radius: var(--radius-lg); }
+  .book-view      { padding: 12px 12px 60px; padding-top: 68px; }
+
+  /* Top bar: brand on row 1, controls on row 2 */
+  .book-view-top  {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px;
+    border-radius: var(--radius-lg);
+  }
+  .book-view-top .brand { flex: 1 1 100%; }
   .book-view-top .brand .b-sub  { display: none; }
   .book-view-top .brand .b-mark { font-size: 18px; }
-  .book-view-top .row { gap: 6px; }
+  .book-view-top > .row {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  /* Compact buttons on mobile */
+  .book-view-top .btn { padding: 7px 10px; font-size: 11px; gap: 5px; }
+  .book-view-top .layout-switch { flex-shrink: 0; }
+  .book-view-top .layout-switch button { padding: 5px 8px; font-size: 9px; }
 
   /* ── Flipbook ── */
   .flipbook-table { padding: 16px 8px 56px; }
-  .flipbook       { width: calc(100vw - 24px); max-width: 360px; height: 240px; }
-  .fb-page-inner  { inset: 14px 18px; }
+  .flipbook       { width: calc(100vw - 24px); max-width: 360px; height: 280px; }
+  .fb-page-inner  { inset: 14px 18px; overflow: hidden; }
   .fb-page.page-left  .fb-page-inner { left: 18px; right: 22px; }
   .fb-page.page-right .fb-page-inner { left: 22px; right: 18px; }
   .fb-pagenum { font-size: 8px; bottom: 8px; }
@@ -1622,23 +1639,31 @@ button { font-family: inherit; cursor: pointer; }
   .fb-nav .progress { font-size: 9px; }
 
   /* Page templates on book pages */
-  .tpl-cover      { padding: 24px 18px; }
-  .tpl-cover h1   { font-size: 32px; margin: 8px 0 0; }
-  .tpl-cover .jp-sub  { font-size: 11px; margin-top: 8px; }
+  .tpl-cover      { padding: 20px 16px; }
+  .tpl-cover h1   { font-size: 28px; margin: 6px 0 0; }
+  .tpl-cover .jp-sub  { font-size: 10px; margin-top: 6px; }
   .tpl-cover .stamp   { font-size: 8px; }
-  .tpl-preface        { padding: 28px 18px; }
-  .tpl-preface .tag-jp { font-size: 18px; }
-  .tpl-preface .tag-en { font-size: 12px; margin-top: 10px; }
-  .tpl-photo          { padding: 14px 16px; }
-  .tpl-photo.left     { padding-right: 20px; }
-  .tpl-photo.right    { padding-left: 20px; }
-  .tpl-1 .cap-row .title { font-size: 12px; }
-  .tpl-note           { padding: 24px 18px; }
-  .tpl-note .note-body { font-size: 11px; line-height: 24px; }
-  .tpl-closing        { padding: 28px 18px; }
-  .tpl-closing h2     { font-size: 22px; margin: 10px 0 4px; }
-  .tpl-closing .nums  { gap: 18px; margin-top: 20px; }
-  .tpl-closing .nums .n { font-size: 22px; }
+  .tpl-preface        { padding: 24px 16px; }
+  .tpl-preface .tag-jp { font-size: 16px; }
+  .tpl-preface .tag-en { font-size: 11px; margin-top: 8px; }
+  .tpl-photo          { padding: 12px 14px; }
+  .tpl-photo.left     { padding-right: 18px; }
+  .tpl-photo.right    { padding-left: 18px; }
+  .tpl-1 .cap-row .title { font-size: 11px; }
+  .tpl-note           { padding: 20px 16px; }
+  .tpl-note .note-body { font-size: 10px; line-height: 22px; }
+  .tpl-closing        { padding: 24px 16px; }
+  .tpl-closing h2     { font-size: 20px; margin: 8px 0 4px; }
+  .tpl-closing .nums  { gap: 16px; margin-top: 16px; }
+  .tpl-closing .nums .n { font-size: 20px; }
+
+  /* First content page — fc-bottom 在小空間裡不用 margin-top: auto */
+  .first-content  { padding: 20px 16px; gap: 0; }
+  .fc-glyph       { font-size: 8px; }
+  .fc-title       { font-size: 24px; margin: 6px 0 10px; }
+  .fc-body        { font-size: 10px; line-height: 1.7; }
+  .fc-bottom      { margin-top: 10px; }
+  .fc-from        { font-size: 12px; }
 
   /* ── Album / home ── */
   .albums-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
