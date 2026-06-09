@@ -1,0 +1,25 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (local only)
+uploads/
+
+# Screenshots
+*.png
+*.jpg
+*.jpeg

@@ -1,17 +1,30 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Photos metadata — anyone can read/write
+
     match /photos/{photoId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['url', 'uploadedAt'])
+                   && request.resource.data.url is string
+                   && request.resource.data.url.size() < 1000
+                   && request.resource.data.keys().size() <= 10;
+      allow update: if request.resource.data.keys().size() <= 10;
+      allow delete: if false;
     }
-    // Stickers on each photo — anyone can read/write
+
     match /stickers/{photoId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if request.resource.data.keys().size() <= 100;
     }
-    // Comments — anyone can read/write
+
     match /comments/{commentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['text', 'createdAt'])
+                   && request.resource.data.text is string
+                   && request.resource.data.text.size() <= 500
+                   && request.resource.data.keys().size() <= 5;
+      allow update, delete: if false;
     }
+
   }
 }
