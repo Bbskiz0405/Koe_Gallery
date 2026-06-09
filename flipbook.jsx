@@ -207,9 +207,74 @@ function PageFaceBack({ page, side, pageNum, totalPages, ...rest }) {
   );
 }
 
+// ─── mobile detection ───
+function useMobile() {
+  const [mobile, setMobile] = fbUseState(() => window.innerWidth <= 600);
+  fbUseEffect(() => {
+    const h = () => setMobile(window.innerWidth <= 600);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return mobile;
+}
+
+// ─── Mobile single-page viewer ───
+function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
+  const total = pages.length;
+  const [pageIdx, setPageIdx] = fbUseState(0);
+  const [animDir, setAnimDir] = fbUseState(null);
+
+  const go = (delta) => {
+    if (animDir) return;
+    const target = pageIdx + delta;
+    if (target < 0 || target >= total) return;
+    setPageIdx(target);
+    setAnimDir(delta > 0 ? "next" : "prev");
+    setTimeout(() => setAnimDir(null), 350);
+  };
+
+  const page = pages[pageIdx];
+  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey };
+
+  return (
+    <div className="flipbook-wrap">
+      <div className="flipbook-mobile">
+        <div key={pageIdx} className={`fb-mobile-page${animDir ? ` anim-in-${animDir}` : ""}`}>
+          <PageFace page={page} side="right" pageNum={pageIdx + 1} {...commonProps} />
+        </div>
+        <div className="fb-corner prev" onClick={() => go(-1)}
+          style={{ opacity: pageIdx === 0 ? 0.3 : 1, pointerEvents: pageIdx === 0 ? "none" : "auto" }}>
+          <div className="fb-corner-arrow">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg>
+          </div>
+        </div>
+        <div className="fb-corner next" onClick={() => go(1)}
+          style={{ opacity: pageIdx >= total - 1 ? 0.3 : 1, pointerEvents: pageIdx >= total - 1 ? "none" : "auto" }}>
+          <div className="fb-corner-arrow">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg>
+          </div>
+        </div>
+      </div>
+      <div className="fb-nav">
+        <button className="btn" onClick={() => go(-1)} disabled={pageIdx === 0}>← prev</button>
+        <div className="scrub"><div className="fill" style={{ width: `${(pageIdx + 1) / total * 100}%` }} /></div>
+        <div className="progress">{String(pageIdx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</div>
+        <button className="btn primary" onClick={() => go(1)} disabled={pageIdx >= total - 1}>next →</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── FlipBook ───
 function FlipBook({ album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
+  const isMobile = useMobile();
   const pages       = fbUseRef(buildPages(album)).current;
+
+  if (isMobile) {
+    return <MobileFlipBook pages={pages} album={album} onOpenPhoto={onOpenPhoto}
+      photosMap={photosMap} placedStickers={placedStickers} getPhotoKey={getPhotoKey} />;
+  }
+
   const total       = pages.length;
   const totalSpreads = total / 2;
 
