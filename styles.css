@@ -1344,27 +1344,8 @@ button { font-family: inherit; cursor: pointer; }
 }
 .fb-corner.next { right: 0; }
 .fb-corner.prev { left: 0; }
-.fb-corner::after {
-  content: ""; position: absolute; bottom: 0; width: 80px; height: 80px;
-  background: linear-gradient(225deg, rgba(120,80,30,0.18) 0%, transparent 60%);
-  opacity: 0; transition: opacity .25s ease;
-  pointer-events: none;
-}
-.fb-corner.next::after { right: 0; }
-.fb-corner.prev::after {
-  left: 0; background: linear-gradient(-45deg, rgba(120,80,30,0.18) 0%, transparent 60%);
-}
-.fb-corner:hover::after { opacity: 1; }
-.fb-corner-arrow {
-  position: absolute; bottom: 18px; width: 28px; height: 28px;
-  border-radius: 999px; background: var(--ink); color: #fff;
-  display: grid; place-items: center;
-  opacity: 0; transition: opacity .25s ease;
-  pointer-events: none;
-}
-.fb-corner.next .fb-corner-arrow { right: 18px; }
-.fb-corner.prev .fb-corner-arrow { left: 18px; }
-.fb-corner:hover .fb-corner-arrow { opacity: 1; }
+.fb-corner::after { display: none; }
+.fb-corner-arrow  { display: none; }
 
 /* book nav (below) */
 .fb-nav {
