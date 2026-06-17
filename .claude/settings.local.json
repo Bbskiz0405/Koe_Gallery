@@ -24,7 +24,12 @@
       "Bash(firebase apps:sdkconfig *)",
       "Bash(firebase firestore:databases:create --location=nam5 --project koe-gallery-echo)",
       "Bash(firebase firestore:databases:create \"\\(default\\)\" --location=nam5 --project koe-gallery-echo)",
-      "Bash(firebase deploy *)"
+      "Bash(firebase deploy *)",
+      "Bash(dir C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\tool *)",
+      "Bash(mkdir \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\fonts\")",
+      "Bash(cp \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\tool/ognes.otf\" \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\fonts/\")",
+      "Bash(cp \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\tool/paradise-signature.otf\" \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\fonts/\")",
+      "Bash(cp \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\tool/花園明朝HanaMinA.ttf\" \"C:\\\\Users\\\\asus\\\\Desktop\\\\VS_pro\\\\KOE_gallery\\\\fonts/\")"
     ]
   }
 }

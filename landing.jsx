@@ -22,18 +22,13 @@ function CoverContent({ memorial = true }) {
       <span className="cv-corner br"><CornerFlourish /></span>
 
       <div className="cv-top">
-        <div className="cv-stamp">∅.◦ ECHO COLLECTION · MEMORIAL</div>
-        <div className="cv-mark">⟡</div>
+        <div className="cv-stamp">⟡ · ECHO COLLECTION · MEMORIAL</div>
       </div>
 
       <div className="cv-mid">
-        <Daisy size={64} />
         <div className="cv-title-block">
           <div className="cv-title-zh">心咲</div>
           <div className="cv-title-koe">KOE</div>
-        </div>
-        <div className="cv-title-en">
-          voice from a faraway universe
         </div>
         <div className="cv-divider">
           <span className="cv-rule" />
@@ -41,16 +36,14 @@ function CoverContent({ memorial = true }) {
           <span className="cv-rule" />
         </div>
         <div className="cv-tag-jp">心の花を咲かせる声</div>
-        <div className="cv-tag-en">A voice that blooms flowers in your heart</div>
       </div>
 
       <div className="cv-foot">
-        <div className="cv-years">
-          <span>2022.12.18</span>
-          <span className="cv-dash">——</span>
-          <span>2026.03.11</span>
+        <span className="cv-foot-date">2022.12.18 — 2026.03.11</span>
+        <div className="cv-foot-row">
+          <span className="cv-foot-stamp">MADE BY ECHO</span>
+          <span className="cv-foot-stamp">VOL. 01</span>
         </div>
-        <div className="cv-credit">made by ECHO · vol. 01</div>
       </div>
     </div>
   );
@@ -76,7 +69,7 @@ function FirstContentPage() {
   return (
     <div className="first-content">
       <div className="fc-glyph">CHAPTER · ∅.◦</div>
-      <h2 className="fc-title">致<em>心咲</em><br />KOE</h2>
+      <h2 className="fc-title">致<em>心咲</em><br /><span className="fc-koe">KOE</span></h2>
       <p className="fc-body">
         在夢的宇宙中旅行的異星 VSinger。<br />
         從藍星啟程的那一晚，我們聽見了你的歌聲。<br />

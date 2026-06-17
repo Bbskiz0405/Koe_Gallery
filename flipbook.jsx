@@ -2,7 +2,7 @@
 const { useState: fbUseState, useEffect: fbUseEffect, useRef: fbUseRef } = React;
 
 // ─── small daisy decoration ───
-function Daisy({ size = 56, petalFill = "#fff", coreFill = "#f7c948", stroke = "#1d1535" }) {
+function Daisy({ size = 56, petalFill = "#fff", coreFill = "#fde68a", stroke = "#9389a8" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
       {[0, 45, 90, 135, 180, 225, 270, 315].map((rot, i) => (
@@ -40,29 +40,143 @@ function BookPhoto({ seed, photo, onOpen, label, dateStr, className = "", style,
   );
 }
 
+// ─── a single freely-placed photo on a collage page ───
+// Drag to move, ↻ corner handle to rotate + resize, ✕ to remove.
+function CollagePhoto({ photo, idx, editing, selected, onSelect, onUpdate, onPersist,
+                        onDelete, onClick, containerRef, stickers, quickSticker }) {
+  const startRef = fbUseRef(null);
+  const movedRef = fbUseRef(false);
+
+  const x = photo.x ?? 50, y = photo.y ?? 50;
+  const rot = photo.rot ?? 0, scale = photo.scale ?? 1;
+  const halfW = (50 * scale) / 2; // photo width ≈ 50% of page * scale
+
+  const clamp = (v) => Math.max(halfW + 2, Math.min(100 - halfW - 2, v));
+
+  const onPointerDown = (e, mode = "move") => {
+    if (!editing) return;
+    e.stopPropagation();
+    onSelect(idx);
+    movedRef.current = false;
+    const rect = containerRef.current.getBoundingClientRect();
+    startRef.current = { mode, startX: e.clientX, startY: e.clientY,
+      start: { x, y, rot, scale }, rect };
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp, { once: true });
+  };
+
+  const onPointerMove = (e) => {
+    const s = startRef.current; if (!s) return;
+    movedRef.current = true;
+    if (s.mode === "move") {
+      const nx = s.start.x + ((e.clientX - s.startX) / s.rect.width) * 100;
+      const ny = s.start.y + ((e.clientY - s.startY) / s.rect.height) * 100;
+      onUpdate(photo.id, { x: clamp(nx), y: clamp(ny) });
+    } else {
+      const cx = s.rect.left + (s.start.x / 100) * s.rect.width;
+      const cy = s.rect.top  + (s.start.y / 100) * s.rect.height;
+      const ang  = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+      const ang0 = Math.atan2(s.startY - cy, s.startX - cx) * 180 / Math.PI;
+      const d0 = Math.hypot(s.startX - cx, s.startY - cy);
+      const d1 = Math.hypot(e.clientX - cx, e.clientY - cy);
+      const newScale = Math.max(0.4, Math.min(2.2, s.start.scale * (d1 / Math.max(1, d0))));
+      onUpdate(photo.id, { rot: s.start.rot + (ang - ang0), scale: newScale });
+    }
+  };
+
+  const onPointerUp = () => {
+    document.removeEventListener("pointermove", onPointerMove);
+    const s = startRef.current; startRef.current = null;
+    if (s && movedRef.current) onPersist(photo.id); // write final layout to Firestore
+  };
+
+  return (
+    <div
+      className={`collage-photo ${editing ? "editing" : ""} ${selected ? "selected" : ""}`}
+      style={{
+        left: `${x}%`, top: `${y}%`,
+        width: `${50 * scale}%`,
+        transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+        cursor: editing ? "grab" : quickSticker ? "crosshair" : "zoom-in",
+      }}
+      onPointerDown={(e) => onPointerDown(e, "move")}
+      onClick={(e) => { if (!editing) { e.stopPropagation(); onClick(idx); } }}
+    >
+      <div className="cp-frame">
+        {photo.url
+          ? <img src={photo.url} alt="" draggable={false}
+              style={{ width: "100%", height: "auto", display: "block" }} />
+          : <div className="cp-ph" style={{ background: gradientFor(idx) }} />}
+        {stickers && stickers.length > 0 && (
+          <div className="book-stickers">
+            {stickers.map(s => { const R = s.render; return R ? (
+              <div key={s.id} className="placed-mini"
+                style={{ left: `${s.x}%`, top: `${s.y}%`, '--r': `${s.rot}deg`, '--s': s.scale }}>
+                <R />
+              </div>
+            ) : null; })}
+          </div>
+        )}
+      </div>
+      {editing && selected && (
+        <>
+          <button className="sticker-handle delete" onPointerDown={(e) => { e.stopPropagation(); onDelete(photo.id); }}>
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2 L 8 8 M 8 2 L 2 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+          </button>
+          <div className="sticker-handle rotate" onPointerDown={(e) => onPointerDown(e, "rotate")}>↻</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── a blank collage page that holds freely-placed photos ───
+function CollagePage({ cindex, photos, editing, selectedPhoto, onSelectPhoto,
+                       onUpdatePhoto, onPersistPhoto, onDeletePhoto, onPhotoClick,
+                       placedStickers, getPhotoKey, quickSticker }) {
+  const pageRef = fbUseRef(null);
+  const here = photos
+    .map((p, i) => ({ ...p, _i: i }))
+    .filter(p => (p.page ?? 0) === cindex);
+
+  return (
+    <div className={`tpl-collage ${editing ? "editing" : ""}`} ref={pageRef}
+      onClick={() => { if (editing) onSelectPhoto(null); }}>
+      {here.length === 0 && (
+        <div className="collage-empty">
+          {editing ? "拖曳照片自由擺放 ⟡" : "這一頁還是空白的"}
+        </div>
+      )}
+      {here.map(p => {
+        const key = getPhotoKey ? getPhotoKey(p._i) : p.id;
+        return (
+          <CollagePhoto key={p.id} photo={p} idx={p._i}
+            editing={editing}
+            selected={selectedPhoto === p._i}
+            onSelect={onSelectPhoto}
+            onUpdate={onUpdatePhoto}
+            onPersist={onPersistPhoto}
+            onDelete={onDeletePhoto}
+            onClick={onPhotoClick}
+            containerRef={pageRef}
+            stickers={placedStickers?.[key] || []}
+            quickSticker={quickSticker}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── build pages for an album ───
-function buildPages(album) {
-  const seeds = album.photoSeed;
+// Freeform collage book: opening dedication spread, then N blank collage pages
+// where fans freely place their fanart. `collagePages` controls how many.
+function buildPages(album, collagePages) {
   const pages = [];
   pages.push({ kind: "inside-cover", album });
   pages.push({ kind: "first-content", album });
-
-  const layouts = ["photo-1", "photo-3", "photo-2", "photo-4", "photo-1", "photo-2", "photo-3"];
-  let cursor = 0, layoutIdx = 0;
-  while (cursor < seeds.length) {
-    const kind = layouts[layoutIdx % layouts.length];
-    const need = kind === "photo-1" ? 1 : kind === "photo-2" ? 2 : kind === "photo-3" ? 3 : 4;
-    const photos = seeds.slice(cursor, cursor + need);
-    if (photos.length === 0) break;
-    pages.push({ kind, photos, caps: photos.map((s, i) => POLAROID_CAPS[(s + i) % POLAROID_CAPS.length]) });
-    cursor += need;
-    layoutIdx++;
-    if (layoutIdx % 3 === 0 && cursor < seeds.length) {
-      pages.push({ kind: "note", text: noteForAlbum(album.id, layoutIdx / 3) });
-    }
-  }
-  if (pages.length % 2 === 1) pages.push({ kind: "note", text: noteForAlbum(album.id, 99) });
-  pages.push({ kind: "closing", album });
+  const n = Math.max(1, collagePages || 1);
+  for (let i = 0; i < n; i++) pages.push({ kind: "collage", cindex: i });
   if (pages.length % 2 === 1) pages.push({ kind: "blank" });
   return pages;
 }
@@ -79,97 +193,27 @@ function noteForAlbum(albumId, n) {
 }
 
 // ─── page renderers ───
-function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, albumId, photosMap, placedStickers, getPhotoKey }) {
+function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, albumId, photosMap,
+                   placedStickers, getPhotoKey, photos, editing, selectedPhoto,
+                   onSelectPhoto, onUpdatePhoto, onPersistPhoto, onDeletePhoto, quickSticker }) {
   if (page.kind === "blank") return null;
   if (page.kind === "inside-cover")  return <InsideCover />;
   if (page.kind === "first-content") return <FirstContentPage />;
 
-  if (page.kind === "note") {
+  if (page.kind === "collage") {
     return (
-      <div className="tpl-note">
-        <h3 className="note-title">{page.text.title}</h3>
-        <div className="note-body">{page.text.body.split("\n").map((l, i) => <div key={i}>{l}</div>)}</div>
-        <div className="sig-line">
-          <div className="sig">心咲KOE</div>
-          <div className="stamp">∅.◦ HANDWRITTEN</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (page.kind === "closing") {
-    return (
-      <div className="tpl-closing">
-        <Daisy size={64} />
-        <h2>thank you, ECHO ⟡</h2>
-        <div className="echo">END OF MEMORIAL BOOK</div>
-        <div className="nums">
-          <div><div className="n">{page.album.count}</div><div className="l">photos</div></div>
-          <div><div className="n">{Object.values(placedStickers || {}).reduce((a, b) => a + b.length, 0)}</div><div className="l">stickers</div></div>
-        </div>
-      </div>
-    );
-  }
-
-  const getPhoto  = (seed) => photosMap?.[seed] || null;
-  const getStickers = (seed) => {
-    const key = getPhotoKey ? getPhotoKey(seed) : `${albumId}:${seed}`;
-    return placedStickers?.[key] || [];
-  };
-  const dates = ["10.18", "10.21", "10.23", "11.02", "11.07", "11.14"];
-
-  if (page.kind === "photo-1") {
-    const s = page.photos[0];
-    return (
-      <div className={`tpl-photo ${side} tpl-1`}>
-        <div className="head"><span className="num">{photoLabel(s)}</span><span>·</span><span>{dates[s % dates.length]}</span></div>
-        <div className="grid">
-          <BookPhoto seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)}
-            onOpen={() => onOpenPhoto(s)} dateStr={`#${pageNum}`} />
-          <div className="cap-row">
-            <span className="date">{dates[s % dates.length]}</span>
-            <span className="title">{page.caps[0]}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (page.kind === "photo-2") {
-    return (
-      <div className={`tpl-photo ${side} tpl-2`}>
-        <div className="head"><span className="num">SPREAD ·</span><span>{page.photos.map(photoLabel).join(" · ")}</span></div>
-        <div className="grid">
-          {page.photos.map((s, i) => (
-            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)}
-              onOpen={() => onOpenPhoto(s)} dateStr={dates[(s + i) % dates.length]} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  if (page.kind === "photo-3") {
-    const [a, b, c] = page.photos;
-    return (
-      <div className={`tpl-photo ${side} tpl-3`}>
-        <div className="head"><span className="num">SPREAD ·</span><span>3 photos</span></div>
-        <div className="grid">
-          {a !== undefined && <BookPhoto seed={a} photo={getPhoto(a)} stickersOnPhoto={getStickers(a)} className="span2" onOpen={() => onOpenPhoto(a)} />}
-          {b !== undefined && <BookPhoto seed={b} photo={getPhoto(b)} stickersOnPhoto={getStickers(b)} onOpen={() => onOpenPhoto(b)} />}
-          {c !== undefined && <BookPhoto seed={c} photo={getPhoto(c)} stickersOnPhoto={getStickers(c)} onOpen={() => onOpenPhoto(c)} />}
-        </div>
-      </div>
-    );
-  }
-  if (page.kind === "photo-4") {
-    return (
-      <div className={`tpl-photo ${side} tpl-4`}>
-        <div className="head"><span className="num">SPREAD ·</span><span>4 photos · {dates[page.photos[0] % dates.length]}</span></div>
-        <div className="grid">
-          {page.photos.map((s, i) => (
-            <BookPhoto key={i} seed={s} photo={getPhoto(s)} stickersOnPhoto={getStickers(s)} onOpen={() => onOpenPhoto(s)} />
-          ))}
-        </div>
-      </div>
+      <CollagePage cindex={page.cindex} photos={photos || []}
+        editing={editing}
+        selectedPhoto={selectedPhoto}
+        onSelectPhoto={onSelectPhoto}
+        onUpdatePhoto={onUpdatePhoto}
+        onPersistPhoto={onPersistPhoto}
+        onDeletePhoto={onDeletePhoto}
+        onPhotoClick={onOpenPhoto}
+        placedStickers={placedStickers}
+        getPhotoKey={getPhotoKey}
+        quickSticker={quickSticker}
+      />
     );
   }
   return null;
@@ -218,8 +262,18 @@ function useMobile() {
   return mobile;
 }
 
+// report the collage page index currently in view (left page first) upward
+function reportPage(pages, spread, onPageChange) {
+  if (!onPageChange) return;
+  const l = pages[spread * 2], r = pages[spread * 2 + 1];
+  const c = (l && l.kind === "collage") ? l.cindex
+          : (r && r.kind === "collage") ? r.cindex : null;
+  if (c !== null) onPageChange(c);
+}
+
 // ─── Mobile spread viewer — same two-page spread, scaled to fit ───
-function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
+function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, getPhotoKey,
+                          onPageChange, ...collageProps }) {
   const total        = pages.length;
   const totalSpreads = Math.floor(total / 2);
   const [spread, setSpread] = fbUseState(0);
@@ -236,6 +290,8 @@ function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, 
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  fbUseEffect(() => { reportPage(pages, spread, onPageChange); }, [spread]);
+
   const go = (delta) => {
     if (fading) return;
     const target = spread + delta;
@@ -246,7 +302,7 @@ function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, 
 
   const lPage = pages[spread * 2];
   const rPage = pages[spread * 2 + 1];
-  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey };
+  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey, ...collageProps };
 
   return (
     <div className="flipbook-wrap">
@@ -289,22 +345,24 @@ function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, 
 }
 
 // ─── FlipBook ───
-function FlipBook({ album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }) {
+function FlipBook({ album, onOpenPhoto, photosMap, placedStickers, getPhotoKey,
+                   collagePages, onPageChange, ...collageProps }) {
   const isMobile = useMobile();
-  const pages       = fbUseRef(buildPages(album)).current;
-
-  if (isMobile) {
-    return <MobileFlipBook pages={pages} album={album} onOpenPhoto={onOpenPhoto}
-      photosMap={photosMap} placedStickers={placedStickers} getPhotoKey={getPhotoKey} />;
-  }
+  const pages    = buildPages(album, collagePages);
 
   const total       = pages.length;
-  const totalSpreads = total / 2;
+  const totalSpreads = Math.ceil(total / 2);
 
   const [spread, setSpread] = fbUseState(0);
   const [anim, setAnim]     = fbUseState(null);
 
-  fbUseEffect(() => { setSpread(0); }, [album.id]);
+  fbUseEffect(() => { reportPage(pages, spread, onPageChange); }, [spread, total]);
+
+  if (isMobile) {
+    return <MobileFlipBook pages={pages} album={album} onOpenPhoto={onOpenPhoto}
+      photosMap={photosMap} placedStickers={placedStickers} getPhotoKey={getPhotoKey}
+      onPageChange={onPageChange} {...collageProps} />;
+  }
 
   const go = (delta) => {
     if (anim) return;
@@ -333,7 +391,7 @@ function FlipBook({ album, onOpenPhoto, photosMap, placedStickers, getPhotoKey }
   }
 
   const progress    = (spread + 1) / totalSpreads;
-  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey };
+  const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey, ...collageProps };
 
   return (
     <div className="flipbook-wrap">

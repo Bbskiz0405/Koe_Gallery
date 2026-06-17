@@ -29,6 +29,10 @@ function App() {
   const [uploadOpen, setUploadOpen]         = aUseState(false);
   const [placedStickers, setPlacedStickers] = aUseState({});
   const [photos, setPhotos]                 = aUseState([]);
+  const [collagePages, setCollagePages]     = aUseState(4);
+  const [currentCollagePage, setCurrentCollagePage] = aUseState(0);
+  const photosRef = React.useRef(photos);
+  photosRef.current = photos;
 
   // load photos from Firestore in real-time
   aUseEffect(() => {
@@ -40,6 +44,38 @@ function App() {
       );
     return unsub;
   }, []);
+
+  // load page count (shared) from Firestore
+  aUseEffect(() => {
+    const unsub = db.collection("meta").doc("memorial").onSnapshot(
+      doc => { const d = doc.data(); if (d && typeof d.pages === "number") setCollagePages(d.pages); },
+      err => console.error("Meta load error:", err)
+    );
+    return unsub;
+  }, []);
+
+  // ── freeform photo layout handlers (shared via Firestore) ──
+  const updatePhotoLocal = (id, patch) =>
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+
+  const persistPhoto = (id) => {
+    const p = photosRef.current.find(x => x.id === id);
+    if (!p) return;
+    db.collection("photos").doc(id).update({
+      page: p.page ?? 0, x: p.x ?? 50, y: p.y ?? 50, rot: p.rot ?? 0, scale: p.scale ?? 1,
+    }).catch(e => console.error("Save photo layout:", e));
+  };
+
+  const deletePhoto = (id) =>
+    db.collection("photos").doc(id).delete().catch(e => console.error("Delete photo:", e));
+
+  const addPage = () => {
+    const maxP = photosRef.current.reduce((m, p) => Math.max(m, (p.page ?? 0)), 0);
+    const next = Math.max(collagePages, maxP + 1) + 1;
+    setCollagePages(next);
+    db.collection("meta").doc("memorial").set({ pages: next }, { merge: true })
+      .catch(e => console.error("Add page:", e));
+  };
 
   // load stickers from Firestore and reconstruct render functions
   aUseEffect(() => {
@@ -66,6 +102,10 @@ function App() {
   const photosMap = {};
   photos.forEach((photo, i) => { photosMap[i] = photo; });
 
+  // enough pages to hold every photo's assigned page
+  const maxPhotoPage = photos.reduce((m, p) => Math.max(m, (p.page ?? 0)), 0);
+  const effectivePages = Math.max(collagePages, maxPhotoPage + 1);
+
   // when real photos exist, rewrite photoSeed as sequential indices
   const effectiveAlbum = photos.length > 0
     ? { ...MEMORIAL_BOOK, photoSeed: photos.map((_, i) => i), count: photos.length }
@@ -88,16 +128,7 @@ function App() {
 
   const photoKey = lightbox ? getPhotoKey(lightbox.seed) : null;
 
-  // save stickers to Firestore when lightbox closes
-  const closeLightbox = () => {
-    if (photoKey) {
-      const safe = (placedStickers[photoKey] || []).map(({ render, ...rest }) => rest);
-      db.collection("stickers").doc(photoKey)
-        .set({ stickers: safe })
-        .catch(e => console.error("Save stickers:", e));
-    }
-    setLightbox(null);
-  };
+  const closeLightbox = () => setLightbox(null);
 
   return (
     <>
@@ -129,23 +160,27 @@ function App() {
             setPlacedStickers={setPlacedStickers}
             photosMap={photosMap}
             getPhotoKey={getPhotoKey}
+            photos={photos}
+            collagePages={effectivePages}
+            onPageChange={setCurrentCollagePage}
+            onUpdatePhoto={updatePhotoLocal}
+            onPersistPhoto={persistPhoto}
+            onDeletePhoto={deletePhoto}
+            onAddPage={addPage}
           />
         </div>
       )}
 
       {lightbox && (
         <Lightbox
-          photoKey={photoKey}
           seed={lightbox.seed}
           photoUrl={photosMap[lightbox.seed]?.url}
-          photoDbId={photosMap[lightbox.seed]?.id}
-          stickers={placedStickers}
-          setPlacedStickers={setPlacedStickers}
+          stickers={placedStickers[photoKey] || []}
           onClose={closeLightbox}
         />
       )}
 
-      {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} />}
+      {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} defaultPage={currentCollagePage} />}
 
       <TweaksPanel title="Tweaks · 心咲KOE">
         <TweakSection label="封面">

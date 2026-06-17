@@ -235,7 +235,7 @@ function StickerPanel({ activePack, setActivePack, onPickSticker, selectedSticke
 
 // ───── COMMENTS LIST (Firestore-backed) ─────
 function CommentsList({ photoId }) {
-  const [list, setList]   = useState(MOCK_COMMENTS);
+  const [list, setList]   = useState([]);
   const [draft, setDraft] = useState("");
 
   // Real-time comments from Firestore
@@ -281,7 +281,9 @@ function CommentsList({ photoId }) {
     <>
       <div className="pane">
         <div className="comments">
-          {list.map((c, i) => (
+          {list.length === 0 ? (
+            <div className="comments-empty">還沒有留言，留下第一則吧 ⟡</div>
+          ) : list.map((c, i) => (
             <div className="comment" key={i}>
               <div className="avatar" style={{ background: c.color }}>{c.name[0]}</div>
               <div className="body">

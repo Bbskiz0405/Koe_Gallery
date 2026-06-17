@@ -74,10 +74,10 @@ const Ribbon = ({ size = 52 }) => (
 const Flower = ({ size = 44 }) => (
   <svg width={size} height={size} viewBox="0 0 44 44" fill="none">
     {[0, 72, 144, 216, 288].map((rot, i) => (
-      <ellipse key={i} cx="22" cy="11" rx="6" ry="9" fill="#fbcfe8" stroke="#1a1226" strokeWidth="1.2"
+      <ellipse key={i} cx="22" cy="11" rx="6" ry="9" fill="#fbcfe8" stroke="#9389a8" strokeWidth="1.2"
         transform={`rotate(${rot} 22 22)`} />
     ))}
-    <circle cx="22" cy="22" r="4.5" fill="#fef3c7" stroke="#1a1226" strokeWidth="1.2" />
+    <circle cx="22" cy="22" r="4.5" fill="#fde68a" stroke="#9389a8" strokeWidth="1.2" />
   </svg>
 );
 
@@ -114,11 +114,11 @@ const Lolli = ({ size = 50 }) => (
 const WhiteDaisy = ({ size = 56 }) => (
   <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
     {[0, 45, 90, 135, 180, 225, 270, 315].map((rot, i) => (
-      <ellipse key={i} cx="28" cy="14" rx="5" ry="10" fill="#ffffff" stroke="#1d1535" strokeWidth="1.1"
+      <ellipse key={i} cx="28" cy="14" rx="5" ry="10" fill="#ffffff" stroke="#9389a8" strokeWidth="1.1"
         transform={`rotate(${rot} 28 28)`} />
     ))}
-    <circle cx="28" cy="28" r="5.5" fill="#f7c948" stroke="#1d1535" strokeWidth="1.1" />
-    <circle cx="26.5" cy="26.5" r="1" fill="#1d1535" opacity="0.6" />
+    <circle cx="28" cy="28" r="5.5" fill="#fde68a" stroke="#9389a8" strokeWidth="1.1" />
+    <circle cx="26.5" cy="26.5" r="1" fill="#9389a8" opacity="0.6" />
   </svg>
 );
 
@@ -168,10 +168,10 @@ const STICKER_PACKS = {
       { id: "daisy",     render: WhiteDaisy, w: 60, h: 60 },
       { id: "daisy-pink",render: () => <svg width="60" height="60" viewBox="0 0 56 56" fill="none">
           {[0, 45, 90, 135, 180, 225, 270, 315].map((rot, i) => (
-            <ellipse key={i} cx="28" cy="14" rx="5" ry="10" fill="#fbcfe8" stroke="#1d1535" strokeWidth="1.1"
+            <ellipse key={i} cx="28" cy="14" rx="5" ry="10" fill="#fbcfe8" stroke="#9389a8" strokeWidth="1.1"
               transform={`rotate(${rot} 28 28)`} />
           ))}
-          <circle cx="28" cy="28" r="5.5" fill="#f7c948" stroke="#1d1535" strokeWidth="1.1" />
+          <circle cx="28" cy="28" r="5.5" fill="#fde68a" stroke="#9389a8" strokeWidth="1.1" />
         </svg>, w: 60, h: 60 },
       { id: "koe-mark",  render: KOEMark,    w: 70, h: 36 },
       { id: "echo",      render: EchoBadge,  w: 84, h: 32 },

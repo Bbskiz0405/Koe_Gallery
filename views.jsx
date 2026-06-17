@@ -5,9 +5,12 @@ const { useState: vUseState, useEffect: vUseEffect, useRef: vUseRef } = React;
 // BOOK VIEW
 // ────────────────────────────────────────
 function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
-                    placedStickers, setPlacedStickers, photosMap, getPhotoKey }) {
+                    placedStickers, setPlacedStickers, photosMap, getPhotoKey,
+                    photos, collagePages, onPageChange, onUpdatePhoto, onPersistPhoto,
+                    onDeletePhoto, onAddPage }) {
 
   const [editing, setEditing]   = vUseState(false);
+  const [selectedPhoto, setSelectedPhoto] = vUseState(null);
   const [order, setOrder]       = vUseState(album.photoSeed);
 
   // ── quick sticker bar ──
@@ -147,9 +150,12 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           >
             ✦ 貼紙
           </button>
-          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => setEditing(!editing)}>
+          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => { setEditing(!editing); setSelectedPhoto(null); }}>
             <Icon.edit /> {editing ? "完成" : "排版"}
           </button>
+          {layout === "book" && (
+            <button className="btn" onClick={onAddPage} title="在書末新增一頁空白拼貼頁">＋ 加一頁</button>
+          )}
           <button className="btn pink" onClick={onUpload}><Icon.upload /> 加照片</button>
         </div>
       </div>
@@ -177,15 +183,12 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
               const R = s.render;
               const on = quickSticker?.id === s.id;
               return (
-                <button key={s.id} onClick={() => setQuickSticker(on ? null : s)}
+                <button key={s.id} className="qbar-sticker"
+                  onClick={() => setQuickSticker(on ? null : s)}
                   style={{
-                    width: 44, height: 44, padding: 4,
                     border: `1.5px solid ${on ? "var(--pink-deep)" : "var(--line)"}`,
-                    borderRadius: "var(--radius)", cursor: "pointer",
                     background: on ? "var(--pink-soft)" : "var(--surface)",
-                    display: "grid", placeItems: "center",
                     transform: on ? "scale(1.12)" : "scale(1)",
-                    transition: "all .15s",
                   }}>
                   <R />
                 </button>
@@ -207,10 +210,14 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
         </div>
       )}
 
-      {editing && layout !== "book" && (
+      {editing && (
         <div className="edit-banner">
           <div className="dot" />
-          <span className="mono">{layout === "collage" ? "編輯模式 · 拖曳照片自由擺放" : "編輯模式 · 拖曳照片重新排序"}</span>
+          <span className="mono">
+            {layout === "book" ? "編輯模式 · 拖曳照片擺放，↻ 角落旋轉縮放，✕ 移除"
+              : layout === "collage" ? "編輯模式 · 拖曳照片自由擺放"
+              : "編輯模式 · 拖曳照片重新排序"}
+          </span>
         </div>
       )}
 
@@ -222,6 +229,16 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           photosMap={photosMap}
           placedStickers={placedStickers}
           getPhotoKey={getPhotoKey}
+          photos={photos}
+          collagePages={collagePages}
+          onPageChange={onPageChange}
+          editing={editing}
+          selectedPhoto={selectedPhoto}
+          onSelectPhoto={setSelectedPhoto}
+          onUpdatePhoto={onUpdatePhoto}
+          onPersistPhoto={onPersistPhoto}
+          onDeletePhoto={onDeletePhoto}
+          quickSticker={quickSticker}
         />
       )}
 
@@ -308,36 +325,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
 // ────────────────────────────────────────
 // LIGHTBOX
 // ────────────────────────────────────────
-function Lightbox({ photoKey, seed, photoUrl, photoDbId, stickers: placedStickers, setPlacedStickers, onClose }) {
-  const [tab, setTab]                         = vUseState("stickers");
-  const [activePack, setActivePack]           = vUseState("koe");
-  const [selectedSticker, setSelectedSticker] = vUseState(null);
-  const stageRef = vUseRef(null);
-
-  const stickersHere = placedStickers[photoKey] || [];
-
-  const addSticker = (template) => {
-    const id = `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setPlacedStickers({ ...placedStickers, [photoKey]: [...stickersHere, {
-      id, packId: activePack, stickerId: template.id,
-      render: template.render, w: template.w, h: template.h,
-      x: 40 + Math.random() * 20, y: 40 + Math.random() * 20,
-      rot: (Math.random() - 0.5) * 20, scale: 1,
-    }]});
-    setSelectedSticker(id);
-  };
-
-  const updateSticker = (id, patch) => {
-    setPlacedStickers({ ...placedStickers,
-      [photoKey]: stickersHere.map(s => s.id === id ? { ...s, ...patch } : s) });
-  };
-
-  const deleteSticker = (id) => {
-    setPlacedStickers({ ...placedStickers,
-      [photoKey]: stickersHere.filter(s => s.id !== id) });
-    setSelectedSticker(null);
-  };
-
+function Lightbox({ seed, photoUrl, stickers = [], onClose }) {
   vUseEffect(() => {
     const onEsc = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onEsc);
@@ -345,40 +333,22 @@ function Lightbox({ photoKey, seed, photoUrl, photoDbId, stickers: placedSticker
   }, []);
 
   return (
-    <div className="lightbox" onClick={() => setSelectedSticker(null)}>
-      <div className="lb-stage" onClick={(e) => { if (e.target === e.currentTarget) setSelectedSticker(null); }}>
-        <div className="lb-photo" ref={stageRef} onClick={(e) => e.stopPropagation()}>
-          <PhotoPh seed={seed} url={photoUrl} label={`${photoLabel(seed)} · stardust diary`} />
-          {stickersHere.map(s => (
-            <PlacedSticker key={s.id} data={s}
-              selected={selectedSticker === s.id}
-              onSelect={setSelectedSticker}
-              onChange={updateSticker}
-              onDelete={deleteSticker}
-              containerRef={stageRef}
-            />
-          ))}
+    <div className="lightbox lightbox-zoom" onClick={onClose}>
+      <button className="lb-close-float" onClick={onClose}><Icon.close /></button>
+      <div className="lb-stage" onClick={onClose}>
+        <div className="lb-photo" onClick={(e) => e.stopPropagation()}>
+          {photoUrl
+            ? <img src={photoUrl} alt="" />
+            : <div className="photo-ph" style={{ width: "60vw", height: "70vh", background: gradientFor(seed) }} />}
+          {stickers.map(s => { const R = s.render; return R ? (
+            <div key={s.id} className="placed-mini"
+              style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`,
+                       transform: `translate(-50%,-50%) rotate(${s.rot}deg) scale(${s.scale})` }}>
+              <R />
+            </div>
+          ) : null; })}
         </div>
       </div>
-      <aside className="lb-side" onClick={(e) => e.stopPropagation()}>
-        <div className="head">
-          <h3>{photoUrl ? "FANART" : photoLabel(seed)}</h3>
-          <span className="chip">{stickersHere.length} stickers</span>
-          <button className="lb-close" onClick={onClose}><Icon.close /></button>
-        </div>
-        <div className="tabs">
-          <button className={tab === "stickers" ? "on" : ""} onClick={() => setTab("stickers")}>貼貼紙</button>
-          <button className={tab === "comments" ? "on" : ""} onClick={() => setTab("comments")}>留言</button>
-        </div>
-        {tab === "stickers" ? (
-          <div className="pane">
-            <StickerPanel activePack={activePack} setActivePack={setActivePack}
-              onPickSticker={addSticker} selectedStickerId={null} />
-          </div>
-        ) : (
-          <CommentsList photoId={photoDbId || `seed-${seed}`} />
-        )}
-      </aside>
     </div>
   );
 }
@@ -386,7 +356,7 @@ function Lightbox({ photoKey, seed, photoUrl, photoDbId, stickers: placedSticker
 // ────────────────────────────────────────
 // UPLOAD MODAL
 // ────────────────────────────────────────
-function UploadModal({ onClose }) {
+function UploadModal({ onClose, defaultPage = 0 }) {
   const [step, setStep]     = vUseState(0);
   const [files, setFiles]   = vUseState([]);
   const [hot, setHot]       = vUseState(false);
@@ -411,6 +381,7 @@ function UploadModal({ onClose }) {
 
   const doUpload = async () => {
     setUploading(true);
+    let n = 0;
     for (const { file, id } of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
       const ref = storage.ref(`photos/${Date.now()}_${safeName}`);
@@ -425,8 +396,12 @@ function UploadModal({ onClose }) {
         const url = await ref.getDownloadURL();
         await db.collection("photos").add({
           url, caption: caption || "",
+          page: defaultPage,
+          x: 42 + (n % 3) * 8, y: 42 + (Math.floor(n / 3) % 3) * 8,
+          rot: 0, scale: 1,
           uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
+        n++;
       } catch (err) { console.error("Upload error:", err); }
     }
     setUploading(false);
