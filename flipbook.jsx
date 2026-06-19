@@ -100,7 +100,13 @@ function CollagePhoto({ photo, idx, editing, selected, onSelect, onUpdate, onPer
         cursor: editing ? "grab" : quickSticker ? "crosshair" : "zoom-in",
       }}
       onPointerDown={(e) => onPointerDown(e, "move")}
-      onClick={(e) => { if (!editing) { e.stopPropagation(); onClick(idx); } }}
+      onClick={(e) => {
+        // Always stop the click here so it never bubbles to the page background
+        // (whose onClick deselects). Otherwise releasing a tap in edit mode would
+        // instantly clear the selection and hide the ✕ / ↻ handles.
+        e.stopPropagation();
+        if (!editing) onClick(idx);
+      }}
     >
       <div className="cp-frame">
         {photo.url
