@@ -73,8 +73,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
       const prev = placedStickers[key] || [];
       const next = [...prev, newSticker];
       setPlacedStickers(cur => ({ ...cur, [key]: next }));
-      const safe = next.map(({ render, ...r }) => r);
-      db.collection("stickers").doc(key).set({ stickers: safe }).catch(console.error);
+      persistStickers(key, next);
       setQuickSticker(null);
     } else {
       onOpenPhoto(seed);
@@ -85,6 +84,56 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
   const stickersFor = (seed) => {
     const key = getPhotoKey ? getPhotoKey(seed) : `${album.id}:${seed}`;
     return placedStickers[key] || [];
+  };
+
+  // ── page-level sticker board (stickers placed on the album page, not a photo) ──
+  const persistStickers = (key, list) => {
+    const safe = list.map(({ render, ...r }) => r);
+    db.collection("stickers").doc(key).set({ stickers: safe }).catch(console.error);
+  };
+  const buildSticker = (x, y) => {
+    let customText = null;
+    if (quickSticker.custom) {
+      const t = window.prompt("輸入想對 KOE 說的話 / 文字：");
+      if (t === null || !t.trim()) return null;
+      customText = t.trim().slice(0, 40);
+    }
+    return {
+      id: `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      packId: barPack, stickerId: quickSticker.id,
+      ...(quickSticker.custom ? { custom: true, text: customText } : {}),
+      render: quickSticker.custom ? () => <TextSticker text={customText} /> : quickSticker.render,
+      w: quickSticker.w, h: quickSticker.h,
+      x, y, rot: (Math.random() - 0.5) * 14, scale: 0.9,
+    };
+  };
+  const placeBoardSticker = (boardKey, x, y) => {
+    if (!quickSticker) return;
+    const s = buildSticker(x, y);
+    if (!s) { setQuickSticker(null); return; }
+    const next = [...(placedStickers[boardKey] || []), s];
+    setPlacedStickers(cur => ({ ...cur, [boardKey]: next }));
+    persistStickers(boardKey, next);
+    setQuickSticker(null);
+  };
+  const changeBoardSticker = (boardKey, id, patch) => {
+    setPlacedStickers(cur => ({
+      ...cur,
+      [boardKey]: (cur[boardKey] || []).map(s => s.id === id ? { ...s, ...patch } : s),
+    }));
+  };
+  const commitBoardSticker = (boardKey) => {
+    setPlacedStickers(cur => { persistStickers(boardKey, cur[boardKey] || []); return cur; });
+  };
+  const deleteBoardSticker = (boardKey, id) => {
+    const next = (placedStickers[boardKey] || []).filter(s => s.id !== id);
+    setPlacedStickers(cur => ({ ...cur, [boardKey]: next }));
+    persistStickers(boardKey, next);
+  };
+  const boardProps = {
+    placing: !!quickSticker, editing,
+    onPlace: placeBoardSticker, onChange: changeBoardSticker,
+    onCommit: commitBoardSticker, onDelete: deleteBoardSticker,
   };
 
   return (
@@ -158,11 +207,11 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           </div>
           {quickSticker ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--pink-deep)", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
-              點照片貼上 ↓
+              點頁面任意處貼上 ↓
             </span>
           ) : (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-mute)", letterSpacing: "0.1em" }}>
-              選貼紙再點照片
+              選貼紙 → 點頁面貼上
             </span>
           )}
           <button className="btn ghost btn icon" onClick={() => { setShowBar(false); setQuickSticker(null); }}>
@@ -199,36 +248,44 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           onPersistPhoto={onPersistPhoto}
           onDeletePhoto={onDeletePhoto}
           quickSticker={quickSticker}
+          onPlaceBoard={placeBoardSticker}
+          onChangeBoard={changeBoardSticker}
+          onCommitBoard={commitBoardSticker}
+          onDeleteBoard={deleteBoardSticker}
         />
       )}
 
       {layout === "polaroid" && (
-        <div className="polaroids" style={{ padding: "0 36px" }}>
-          {order.map((seed, i) => {
-            const stickers = stickersFor(seed);
-            return (
-              <div key={`${album.id}-${seed}-${i}-p`} className="photo"
-                onClick={() => handlePhotoClick(seed)}
-                style={{ cursor: quickSticker ? "crosshair" : "pointer" }}>
-                <div className="tape" />
-                <div className="ph-frame" style={{ position: "relative" }}>
-                  <PhotoPh seed={seed} url={photosMap?.[seed]?.url} />
-                  {stickers.length > 0 && (
-                    <div className="book-stickers">
-                      {stickers.map(s => { const R = s.render; return R ? (
-                        <div key={s.id} className="placed-mini"
-                          style={{ left: `${s.x}%`, top: `${s.y}%`, '--r': `${s.rot}deg`, '--s': s.scale }}>
-                          <R />
-                        </div>
-                      ) : null; })}
-                    </div>
-                  )}
+        <div className="album-board-wrap">
+          <div className="polaroids" style={{ padding: "0 36px" }}>
+            {order.map((seed, i) => {
+              const stickers = stickersFor(seed);
+              return (
+                <div key={`${album.id}-${seed}-${i}-p`} className="photo"
+                  onClick={() => handlePhotoClick(seed)}
+                  style={{ cursor: quickSticker ? "crosshair" : "pointer" }}>
+                  <div className="tape" />
+                  <div className="ph-frame" style={{ position: "relative" }}>
+                    <PhotoPh seed={seed} url={photosMap?.[seed]?.url} />
+                    {stickers.length > 0 && (
+                      <div className="book-stickers">
+                        {stickers.map(s => { const R = s.render; return R ? (
+                          <div key={s.id} className="placed-mini"
+                            style={{ left: `${s.x}%`, top: `${s.y}%`, '--r': `${s.rot}deg`, '--s': s.scale }}>
+                            <R />
+                          </div>
+                        ) : null; })}
+                      </div>
+                    )}
+                  </div>
+                  <div className="cap">{photosMap?.[seed]?.caption ?? capText(seed)}</div>
+                  {stickers.length > 0 && <div className="sticker-count">✦ {stickers.length}</div>}
                 </div>
-                <div className="cap">{photosMap?.[seed]?.caption ?? capText(seed)}</div>
-                {stickers.length > 0 && <div className="sticker-count">✦ {stickers.length}</div>}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <StickerBoard boardKey={`${album.id}::polaroid`}
+            stickers={placedStickers[`${album.id}::polaroid`] || []} {...boardProps} />
         </div>
       )}
 

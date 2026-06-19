@@ -137,13 +137,15 @@ function CollagePhoto({ photo, idx, editing, selected, onSelect, onUpdate, onPer
 }
 
 // ─── a blank collage page that holds freely-placed photos ───
-function CollagePage({ cindex, photos, editing, selectedPhoto, onSelectPhoto,
+function CollagePage({ cindex, photos, albumId, editing, selectedPhoto, onSelectPhoto,
                        onUpdatePhoto, onPersistPhoto, onDeletePhoto, onPhotoClick,
-                       placedStickers, getPhotoKey, quickSticker }) {
+                       placedStickers, getPhotoKey, quickSticker,
+                       onPlaceBoard, onChangeBoard, onCommitBoard, onDeleteBoard }) {
   const pageRef = fbUseRef(null);
   const here = photos
     .map((p, i) => ({ ...p, _i: i }))
     .filter(p => (p.page ?? 0) === cindex);
+  const boardKey = `${albumId}::page${cindex}`;
 
   return (
     <div className={`tpl-collage ${editing ? "editing" : ""}`} ref={pageRef}
@@ -170,6 +172,13 @@ function CollagePage({ cindex, photos, editing, selectedPhoto, onSelectPhoto,
           />
         );
       })}
+      {onPlaceBoard && (
+        <StickerBoard boardKey={boardKey}
+          stickers={placedStickers?.[boardKey] || []}
+          placing={!!quickSticker} editing={editing}
+          onPlace={onPlaceBoard} onChange={onChangeBoard}
+          onCommit={onCommitBoard} onDelete={onDeleteBoard} />
+      )}
     </div>
   );
 }
@@ -201,14 +210,15 @@ function noteForAlbum(albumId, n) {
 // ─── page renderers ───
 function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, albumId, photosMap,
                    placedStickers, getPhotoKey, photos, editing, selectedPhoto,
-                   onSelectPhoto, onUpdatePhoto, onPersistPhoto, onDeletePhoto, quickSticker }) {
+                   onSelectPhoto, onUpdatePhoto, onPersistPhoto, onDeletePhoto, quickSticker,
+                   onPlaceBoard, onChangeBoard, onCommitBoard, onDeleteBoard }) {
   if (page.kind === "blank") return null;
   if (page.kind === "inside-cover")  return <InsideCover />;
   if (page.kind === "first-content") return <FirstContentPage />;
 
   if (page.kind === "collage") {
     return (
-      <CollagePage cindex={page.cindex} photos={photos || []}
+      <CollagePage cindex={page.cindex} photos={photos || []} albumId={albumId}
         editing={editing}
         selectedPhoto={selectedPhoto}
         onSelectPhoto={onSelectPhoto}
@@ -219,6 +229,10 @@ function PageBody({ page, side, pageNum, totalPages, onOpenPhoto, albumId, photo
         placedStickers={placedStickers}
         getPhotoKey={getPhotoKey}
         quickSticker={quickSticker}
+        onPlaceBoard={onPlaceBoard}
+        onChangeBoard={onChangeBoard}
+        onCommitBoard={onCommitBoard}
+        onDeleteBoard={onDeleteBoard}
       />
     );
   }

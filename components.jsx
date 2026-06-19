@@ -134,13 +134,16 @@ const stickers = {
 };
 
 // ───── PLACED STICKER (interactive: drag / rotate / scale) ─────
-function PlacedSticker({ data, selected, onSelect, onChange, onDelete, containerRef }) {
+function PlacedSticker({ data, selected, onSelect, onChange, onCommit, onDelete, containerRef, editing = true }) {
   const Render = data.render;
   const startRef = useRef(null);
+  const movedRef = useRef(false);
 
   const onPointerDown = (e, mode = "move") => {
+    if (!editing) return;
     e.stopPropagation();
     onSelect(data.id);
+    movedRef.current = false;
     const rect = containerRef.current.getBoundingClientRect();
     startRef.current = {
       mode,
@@ -154,6 +157,7 @@ function PlacedSticker({ data, selected, onSelect, onChange, onDelete, container
 
   const onPointerMove = (e) => {
     const s = startRef.current; if (!s) return;
+    movedRef.current = true;
     const dx = e.clientX - s.startX;
     const dy = e.clientY - s.startY;
     if (s.mode === "move") {
@@ -174,16 +178,20 @@ function PlacedSticker({ data, selected, onSelect, onChange, onDelete, container
   };
   const onPointerUp = () => {
     document.removeEventListener("pointermove", onPointerMove);
+    const moved = movedRef.current;
     startRef.current = null;
+    if (moved && onCommit) onCommit(data.id);
   };
 
   return (
     <div
-      className={`placed-sticker ${selected ? "selected" : ""}`}
+      className={`placed-sticker ${selected ? "selected" : ""} ${editing ? "editing" : ""}`}
       style={{
         left: `${data.x}%`, top: `${data.y}%`,
         transform: `translate(-50%, -50%) rotate(${data.rot}deg) scale(${data.scale})`,
         width: data.w, height: data.h,
+        pointerEvents: editing ? "auto" : "none",
+        cursor: editing ? "grab" : "default",
       }}
       onPointerDown={(e) => onPointerDown(e, "move")}
     >
@@ -196,6 +204,39 @@ function PlacedSticker({ data, selected, onSelect, onChange, onDelete, container
           <div className="sticker-handle rotate" onPointerDown={(e) => onPointerDown(e, "rotate")}>↻</div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Page-level sticker board ──
+// Stickers placed on the album PAGE itself (not bound to a photo). With a
+// sticker selected from the bar, click anywhere on the board to drop one; in
+// edit mode each placed sticker can be dragged / rotated / deleted.
+function StickerBoard({ boardKey, stickers = [], placing, editing,
+                        onPlace, onChange, onCommit, onDelete }) {
+  const ref = useRef(null);
+  const [sel, setSel] = useState(null);
+
+  const onBoardClick = (e) => {
+    if (!placing || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    onPlace(boardKey, x, y);
+  };
+
+  return (
+    <div ref={ref} className="sticker-board"
+      style={{ pointerEvents: placing ? "auto" : "none", cursor: placing ? "crosshair" : "default" }}
+      onClick={onBoardClick}>
+      {stickers.map(s => (
+        <PlacedSticker key={s.id} data={s} editing={editing} selected={sel === s.id}
+          onSelect={setSel}
+          onChange={(id, patch) => onChange(boardKey, id, patch)}
+          onCommit={(id) => onCommit(boardKey, id)}
+          onDelete={(id) => { onDelete(boardKey, id); setSel(null); }}
+          containerRef={ref} />
+      ))}
     </div>
   );
 }
@@ -312,5 +353,5 @@ function CommentsList({ photoId }) {
 
 Object.assign(window, {
   Brand, PhotoPh, Icon, HeroArt, AlbumCard,
-  PlacedSticker, StickerPanel, CommentsList,
+  PlacedSticker, StickerBoard, StickerPanel, CommentsList,
 });

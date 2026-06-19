@@ -1596,6 +1596,9 @@ button { font-family: inherit; cursor: pointer; }
 
 /* sticker overlay on book photos */
 .book-stickers { position: absolute; inset: 0; pointer-events: none; }
+/* Page-level sticker board — stickers placed on the album page itself */
+.album-board-wrap { position: relative; }
+.sticker-board { position: absolute; inset: 0; z-index: 30; }
 .book-stickers .placed-mini { position: absolute; transform: translate(-50%,-50%) rotate(var(--r, 0deg)) scale(var(--s, 1)); }
 
 /* end page */
