@@ -86,7 +86,9 @@ function App() {
           const { stickers: items = [] } = doc.data();
           data[doc.id] = items.map(s => ({
             ...s,
-            render: STICKER_PACKS[s.packId]?.items.find(x => x.id === s.stickerId)?.render || (() => null),
+            render: s.custom
+              ? () => <TextSticker text={s.text} />
+              : (STICKER_PACKS[s.packId]?.items.find(x => x.id === s.stickerId)?.render || (() => null)),
           }));
         });
         setPlacedStickers(data);
@@ -129,6 +131,16 @@ function App() {
   const photoKey = lightbox ? getPhotoKey(lightbox.seed) : null;
 
   const closeLightbox = () => setLightbox(null);
+
+  // remove a single placed sticker from a photo (state + Firestore)
+  const deleteSticker = (key, stickerId) => {
+    setPlacedStickers(cur => {
+      const next = (cur[key] || []).filter(s => s.id !== stickerId);
+      const safe = next.map(({ render, ...r }) => r);
+      db.collection("stickers").doc(key).set({ stickers: safe }).catch(console.error);
+      return { ...cur, [key]: next };
+    });
+  };
 
   return (
     <>
@@ -176,6 +188,7 @@ function App() {
           seed={lightbox.seed}
           photoUrl={photosMap[lightbox.seed]?.url}
           stickers={placedStickers[photoKey] || []}
+          onDeleteSticker={(stickerId) => deleteSticker(photoKey, stickerId)}
           onClose={closeLightbox}
         />
       )}
@@ -197,7 +210,6 @@ function App() {
             value={tweaks.defaultLayout}
             options={[
               { value: "book",     label: "翻頁"    },
-              { value: "collage",  label: "拼貼"    },
               { value: "polaroid", label: "Polaroid" },
             ]}
             onChange={(v) => setTweak("defaultLayout", v)}

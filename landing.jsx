@@ -108,7 +108,7 @@ function LandingView({ orientation, onOpen, autoClose, onClosed }) {
       {/* Decorative meta info around the book */}
       <div className="landing-meta-top">
         <div className="brand">
-          <div className="b-mark"><em>心咲</em>KOE</div>
+          <div className="b-mark"><em>心咲</em><span className="b-koe">KOE</span></div>
           <div className="b-sub">memorial · echo collection</div>
         </div>
         <div className="row">

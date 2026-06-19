@@ -18,52 +18,6 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
   const [barPack, setBarPack]         = vUseState("koe");
   const [quickSticker, setQuickSticker] = vUseState(null); // selected template
 
-  // ── collage ──
-  const COLLAGE_POSITIONS = [
-    { top: "5%",  left: "12%", size: 220, rot: -6 },
-    { top: "8%",  left: "42%", size: 180, rot:  4 },
-    { top: "12%", left: "70%", size: 240, rot: -3 },
-    { top: "35%", left: "8%",  size: 200, rot:  5 },
-    { top: "38%", left: "36%", size: 260, rot: -2 },
-    { top: "42%", left: "68%", size: 200, rot:  7 },
-    { top: "65%", left: "16%", size: 220, rot: -4 },
-    { top: "70%", left: "44%", size: 180, rot:  3 },
-    { top: "68%", left: "70%", size: 240, rot: -5 },
-    { top: "88%", left: "50%", size: 200, rot:  2 },
-  ];
-  const collageRef = vUseRef(null);
-  const [collagePos, setCollagePos] = vUseState(() => {
-    try { return JSON.parse(localStorage.getItem("koe-collage-pos-" + album.id) || "{}"); }
-    catch (e) { return {}; }
-  });
-  const collagePosFor = (seed, i) => collagePos[seed] || {
-    leftPct: parseFloat(COLLAGE_POSITIONS[i].left),
-    topPct:  parseFloat(COLLAGE_POSITIONS[i].top),
-  };
-  const onCollageDown = (seed, i) => (e) => {
-    if (!editing) return;
-    e.preventDefault(); e.stopPropagation();
-    const rect = collageRef.current.getBoundingClientRect();
-    const cur  = collagePosFor(seed, i);
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
-    const move = (ev) => {
-      const r = collageRef.current.getBoundingClientRect();
-      const nx = Math.max(3, Math.min(97, ((ev.clientX - r.left) / r.width) * 100 - (xPct - cur.leftPct)));
-      const ny = Math.max(3, Math.min(97, ((ev.clientY - r.top) / r.height) * 100 - (yPct - cur.topPct)));
-      setCollagePos(prev => ({ ...prev, [seed]: { leftPct: nx, topPct: ny } }));
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      setCollagePos(prev => {
-        try { localStorage.setItem("koe-collage-pos-" + album.id, JSON.stringify(prev)); } catch (e) {}
-        return prev;
-      });
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  };
 
   const [polaroidCaps, setPolaroidCaps] = vUseState(() => {
     try { return JSON.parse(localStorage.getItem("koe-polaroid-caps-" + album.id) || "{}"); }
@@ -97,11 +51,19 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
   const handlePhotoClick = (seed) => {
     if (quickSticker) {
       const key = getPhotoKey ? getPhotoKey(seed) : `${album.id}:${seed}`;
+      // free-text sticker → ask the visitor what to write
+      let customText = null;
+      if (quickSticker.custom) {
+        const t = window.prompt("輸入想對 KOE 說的話 / 文字：");
+        if (t === null || !t.trim()) { setQuickSticker(null); return; }
+        customText = t.trim().slice(0, 40);
+      }
       const newSticker = {
         id:       `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         packId:   barPack,
         stickerId: quickSticker.id,
-        render:   quickSticker.render,
+        ...(quickSticker.custom ? { custom: true, text: customText } : {}),
+        render:   quickSticker.custom ? () => <TextSticker text={customText} /> : quickSticker.render,
         w: quickSticker.w, h: quickSticker.h,
         x: 40 + Math.random() * 20,
         y: 40 + Math.random() * 20,
@@ -134,13 +96,12 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
       {/* ── top bar ── */}
       <div className="book-view-top">
         <div className="brand">
-          <div className="b-mark"><em>心咲</em>KOE</div>
+          <div className="b-mark"><em>心咲</em><span className="b-koe">KOE</span></div>
           <div className="b-sub">memorial · echo collection · vol. 01</div>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <div className="layout-switch">
             <button className={layout === "book"    ? "on" : ""} onClick={() => setLayout("book")}>翻頁</button>
-            <button className={layout === "collage" ? "on" : ""} onClick={() => setLayout("collage")}>拼貼</button>
             <button className={layout === "polaroid"? "on" : ""} onClick={() => setLayout("polaroid")}>拍立得</button>
           </div>
           <button
@@ -215,7 +176,6 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           <div className="dot" />
           <span className="mono">
             {layout === "book" ? "編輯模式 · 拖曳照片擺放，↻ 角落旋轉縮放，✕ 移除"
-              : layout === "collage" ? "編輯模式 · 拖曳照片自由擺放"
               : "編輯模式 · 拖曳照片重新排序"}
           </span>
         </div>
@@ -264,13 +224,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
                     </div>
                   )}
                 </div>
-                <div className="cap editable" contentEditable suppressContentEditableWarning spellCheck={false}
-                  data-ph="寫點什麼…"
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onBlur={(e) => saveCap(seed, e.currentTarget.textContent.trim())}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }}
-                >{capText(seed)}</div>
+                <div className="cap">{photosMap?.[seed]?.caption ?? capText(seed)}</div>
                 {stickers.length > 0 && <div className="sticker-count">✦ {stickers.length}</div>}
               </div>
             );
@@ -278,46 +232,6 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
         </div>
       )}
 
-      {layout === "collage" && (
-        <div className={`collage ${editing ? "editing" : ""}`} ref={collageRef}>
-          {order.slice(0, 10).map((seed, i) => {
-            const p   = COLLAGE_POSITIONS[i];
-            const pos = collagePosFor(seed, i);
-            const stickers = stickersFor(seed);
-            return (
-              <div key={`${album.id}-${seed}-${i}-c`} className="photo"
-                style={{
-                  top: `${pos.topPct}%`, left: `${pos.leftPct}%`,
-                  width: p.size, height: p.size + 50,
-                  transform: `translate(-50%, -50%) rotate(${editing ? 0 : p.rot}deg)`,
-                  zIndex: 10 - Math.abs(p.rot),
-                  touchAction: editing ? "none" : "auto",
-                  cursor: quickSticker ? "crosshair" : editing ? "grab" : "pointer",
-                }}
-                onPointerDown={onCollageDown(seed, i)}
-                onClick={() => { if (!editing) handlePhotoClick(seed); }}
-              >
-                <div className="ph-frame" style={{ position: "relative" }}>
-                  <PhotoPh seed={seed} url={photosMap?.[seed]?.url} />
-                  {stickers.length > 0 && (
-                    <div className="book-stickers">
-                      {stickers.map(s => { const R = s.render; return R ? (
-                        <div key={s.id} className="placed-mini"
-                          style={{ left: `${s.x}%`, top: `${s.y}%`, '--r': `${s.rot}deg`, '--s': s.scale }}>
-                          <R />
-                        </div>
-                      ) : null; })}
-                    </div>
-                  )}
-                </div>
-                <div className="cap">{photoLabel(seed)} · {POLAROID_CAPS[seed % POLAROID_CAPS.length]}</div>
-                {stickers.length > 0 && <div className="sticker-count">✦ {stickers.length}</div>}
-                {editing && <div className="drag-grip">✥</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -325,7 +239,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
 // ────────────────────────────────────────
 // LIGHTBOX
 // ────────────────────────────────────────
-function Lightbox({ seed, photoUrl, stickers = [], onClose }) {
+function Lightbox({ seed, photoUrl, stickers = [], onDeleteSticker, onClose }) {
   vUseEffect(() => {
     const onEsc = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onEsc);
@@ -341,13 +255,22 @@ function Lightbox({ seed, photoUrl, stickers = [], onClose }) {
             ? <img src={photoUrl} alt="" />
             : <div className="photo-ph" style={{ width: "60vw", height: "70vh", background: gradientFor(seed) }} />}
           {stickers.map(s => { const R = s.render; return R ? (
-            <div key={s.id} className="placed-mini"
+            <div key={s.id} className="placed-mini lb-sticker"
               style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`,
                        transform: `translate(-50%,-50%) rotate(${s.rot}deg) scale(${s.scale})` }}>
               <R />
+              {onDeleteSticker && (
+                <button className="lb-sticker-del" title="移除這個貼紙"
+                  onClick={(e) => { e.stopPropagation(); onDeleteSticker(s.id); }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2 L 8 8 M 8 2 L 2 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+                </button>
+              )}
             </div>
           ) : null; })}
         </div>
+        {stickers.length > 0 && onDeleteSticker && (
+          <div className="lb-sticker-hint">點貼紙右上角的 ✕ 可移除</div>
+        )}
       </div>
     </div>
   );
@@ -462,8 +385,9 @@ function UploadModal({ onClose, defaultPage = 0 }) {
           {step === 1 && (
             <>
               <div className="form-row">
-                <label>說明 (optional)</label>
-                <textarea rows="3" placeholder="這次想說的話…" value={caption} onChange={(e) => setCaption(e.target.value)} />
+                <label>標題</label>
+                <input type="text" maxLength={40} placeholder="幫這張照片下一個標題…（會顯示在拍立得照片下方）"
+                  value={caption} onChange={(e) => setCaption(e.target.value)} />
               </div>
               <div className="form-row">
                 <label>上傳權限</label>

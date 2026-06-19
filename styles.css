@@ -44,6 +44,7 @@
   --font-zh: 'HanaMin', "Noto Serif TC", serif;
   --font-en-display: 'Ognes', "DM Serif Display", serif;
   --font-deco: 'ParadiseSignature', cursive;
+  --font-hand: 'Klee One', 'Caveat', "Noto Sans JP", cursive;
   --font-sans: "Outfit", "Noto Sans JP", system-ui, sans-serif;
   --font-jp: "Noto Sans JP", "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -117,7 +118,8 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 26px; letter-spacing: -0.01em; color: var(--ink);
   white-space: nowrap;
 }
-.brand .b-mark em { font-style: italic; color: var(--pink-deep); }
+.brand .b-mark em { font-family: var(--font-zh); font-style: normal; color: var(--ink); }
+.brand .b-koe { font-family: 'Pinyon Script', cursive; color: var(--pink-deep); font-size: 1.2em; margin-left: 3px; }
 .brand .b-sub {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
   color: var(--ink-mute); text-transform: uppercase;
@@ -363,7 +365,8 @@ button { font-family: inherit; cursor: pointer; }
 .polaroids .photo .ph-frame { aspect-ratio: 1; border-radius: 2px; overflow: hidden; position: relative; }
 .polaroids .photo .cap {
   position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
-  font-family: "Caveat", "DM Serif Display", cursive; font-size: 22px; color: var(--ink-soft);
+  font-family: var(--font-hand); font-size: 22px; color: var(--ink-soft);
+  padding: 0 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .polaroids .photo .cap.editable {
   margin: 0 14px; padding: 1px 6px; border-radius: 6px;
@@ -454,6 +457,22 @@ button { font-family: inherit; cursor: pointer; }
   overflow: hidden;
 }
 .lb-photo .photo-ph { background: linear-gradient(135deg, #fbcfe8, #e9d5ff); }
+/* delete affordance for stickers shown in the lightbox */
+.lb-photo .lb-sticker { cursor: default; }
+.lb-sticker-del {
+  position: absolute; top: -10px; right: -10px;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--pink-deep); color: #fff; border: 2px solid #fff;
+  display: grid; place-items: center; cursor: pointer; padding: 0;
+  box-shadow: 0 2px 6px rgba(26,18,38,0.3);
+}
+.lb-sticker-del:hover { transform: scale(1.12); }
+.lb-sticker-hint {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+  color: #fff; background: rgba(26,18,38,0.55); padding: 6px 14px; border-radius: 999px;
+  pointer-events: none; white-space: nowrap;
+}
 .lb-side {
   background: var(--surface);
   display: flex; flex-direction: column;
@@ -658,7 +677,8 @@ button { font-family: inherit; cursor: pointer; }
   gap: 16px;
 }
 .landing-meta-top .brand .b-mark { font-family: var(--font-display); font-size: 22px; }
-.landing-meta-top .brand .b-mark em { font-style: italic; color: var(--pink-deep); }
+.landing-meta-top .brand .b-mark em { font-family: var(--font-zh); font-style: normal; color: var(--ink); }
+.landing-meta-top .brand .b-koe { font-size: 1.25em; }
 .landing-meta-top .brand .b-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-mute); text-transform: uppercase; }
 
 .landing-meta-bot {
@@ -1260,7 +1280,8 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 6px 20px -8px rgba(29, 21, 53, 0.12);
 }
 .book-view-top .brand .b-mark { font-family: var(--font-display); font-size: 22px; }
-.book-view-top .brand .b-mark em { font-style: italic; color: var(--pink-deep); }
+.book-view-top .brand .b-mark em { font-family: var(--font-zh); font-style: normal; color: var(--ink); }
+.book-view-top .brand .b-koe { font-size: 1.25em; }
 .book-view-top .brand .b-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-mute); text-transform: uppercase; }
 .book-view-top .row { gap: 10px; flex-wrap: nowrap; }
 

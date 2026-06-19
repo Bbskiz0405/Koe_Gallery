@@ -160,6 +160,17 @@ const TagSticker = ({ text, bg = "#f9a8d4", w = 72, h = 28 }) => (
   </svg>
 );
 
+// ── Free-text sticker — renders whatever the user types (CJK-friendly) ──
+const TextSticker = ({ text = "" }) => (
+  <div style={{
+    fontFamily: "'Klee One', 'Caveat', cursive", fontSize: 16, fontWeight: 600,
+    lineHeight: 1.25, color: "#1a1226", background: "#fffdf7",
+    border: "1.6px solid #1a1226", borderRadius: 13, padding: "5px 13px",
+    maxWidth: 200, whiteSpace: "pre-wrap", textAlign: "center", wordBreak: "break-word",
+    boxShadow: "0 2px 0 rgba(26,18,38,0.18)",
+  }}>{text || "文字"}</div>
+);
+
 // Sticker registry — each pack has [id, label, render, size hint]
 const STICKER_PACKS = {
   koe: {
@@ -213,6 +224,7 @@ const STICKER_PACKS = {
   words: {
     id: "words", label: "文字", labelEn: "Words",
     items: [
+      { id: "w-custom", custom: true, render: () => <TextSticker text="＋ 自由輸入" />, w: 90, h: 40 },
       { id: "w-kawaii", render: () => <WordBubble text="kawaii" bg="#fbcfe8" />, w: 80, h: 40 },
       { id: "w-yume",   render: () => <WordBubble text="夢" bg="#fef3c7" />, w: 52, h: 40 },
       { id: "w-koe",    render: () => <WordBubble text="KOE" bg="#d4b8f2" />, w: 62, h: 40 },
@@ -227,4 +239,4 @@ const STICKER_PACKS = {
 
 const PACK_ORDER = ["koe", "cosmic", "girly", "words"];
 
-Object.assign(window, { STICKER_PACKS, PACK_ORDER });
+Object.assign(window, { STICKER_PACKS, PACK_ORDER, TextSticker });
