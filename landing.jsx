@@ -28,7 +28,7 @@ function CoverContent({ memorial = true }) {
       <div className="cv-mid">
         <div className="cv-title-block">
           <div className="cv-title-zh">心咲<span className="cv-spark">✦</span></div>
-          <div className="cv-title-koe">KOE</div>
+          <div className="cv-title-koe">KØE</div>
         </div>
         <div className="cv-divider">
           <span className="cv-rule" />
@@ -108,7 +108,7 @@ function LandingView({ orientation, onOpen, autoClose, onClosed }) {
       {/* Decorative meta info around the book */}
       <div className="landing-meta-top">
         <div className="brand">
-          <div className="b-mark"><em>心咲</em><span className="b-koe">KOE</span></div>
+          <div className="b-mark"><em>心咲</em><span className="b-koe">KØE</span></div>
           <div className="b-sub">memorial · echo collection</div>
         </div>
         <div className="row">

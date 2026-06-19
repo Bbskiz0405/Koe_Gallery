@@ -5,7 +5,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 function Brand({ onClick }) {
   return (
     <div className="brand" onClick={onClick}>
-      <div className="b-mark"><em>心咲</em><span className="b-koe">KOE</span></div>
+      <div className="b-mark"><em>心咲</em><span className="b-koe">KØE</span></div>
       <div className="b-sub">album · 002</div>
     </div>
   );

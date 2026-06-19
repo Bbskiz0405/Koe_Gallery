@@ -119,7 +119,7 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .brand .b-mark em { font-family: var(--font-zh); font-style: normal; color: var(--ink); }
-.brand .b-koe { font-family: 'Pinyon Script', cursive; color: var(--pink-deep); font-size: 1.2em; margin-left: 3px; }
+.brand .b-koe { font-family: var(--font-display); color: var(--pink-deep); font-size: 1em; letter-spacing: -0.01em; margin-left: 4px; }
 .brand .b-sub {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
   color: var(--ink-mute); text-transform: uppercase;
@@ -1158,10 +1158,10 @@ button { font-family: inherit; cursor: pointer; }
   position: relative; z-index: 2;
 }
 .cv-title-koe {
-  font-family: 'Pinyon Script', cursive;
-  font-size: 68px; letter-spacing: 0.02em; line-height: 1;
+  font-family: var(--font-display);          /* high-contrast serif (Didone) */
+  font-size: 54px; letter-spacing: -0.01em; line-height: 1;
   color: var(--pink-deep);
-  margin-top: -22px;          /* overlap up into the lower strokes of 心咲 */
+  margin-top: -24px;          /* overlap up into the lower strokes of 心咲 */
   position: relative; z-index: 3;
 }
 /* sparkle at the top-right of 咲, matching the official logo */
@@ -1649,22 +1649,22 @@ button { font-family: inherit; cursor: pointer; }
   .landing-meta-top .row { flex-wrap: wrap; gap: 6px; }
   .landing-meta-bot { font-size: 9px; letter-spacing: 0.2em; }
 
-  /* Shrink the 3-D stage from 820×540 → 340×224  (scale ≈ 0.415) */
+  /* Shrink the 3-D stage from 820×540 → 410×270  (scale ≈ 0.50) */
   .landing-stage {
-    width: 340px; height: 224px;
+    width: 410px; height: 270px;
     perspective: 1200px;
     -webkit-perspective: 1200px;
   }
   .landing.ori-floating .landing-stage {
-    transform: translateX(-85px) rotateX(2deg) rotateY(-4deg);
+    transform: translateX(-52px) rotateX(2deg) rotateY(-4deg);
     animation: book-float-sm 7s ease-in-out infinite;
   }
   @keyframes book-float-sm {
-    0%, 100% { transform: translateX(-85px) rotateX(2deg) rotateY(-4deg) translateY(0); }
-    50%       { transform: translateX(-85px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
+    0%, 100% { transform: translateX(-52px) rotateX(2deg) rotateY(-4deg) translateY(0); }
+    50%       { transform: translateX(-52px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
   }
   .landing.ori-flat .landing-stage {
-    transform: translateX(-85px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
+    transform: translateX(-52px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
   }
   .landing.phase-lift .landing-stage,
   .landing.phase-open .landing-stage,
@@ -1686,7 +1686,7 @@ button { font-family: inherit; cursor: pointer; }
   .cv-corner { width: 18px; height: 18px; }
   .cv-divider .cv-rule { width: 30px; }
   .cv-title-zh  { font-size: 38px; }
-  .cv-title-koe { font-size: 38px; letter-spacing: 0.02em; margin-top: -13px; }
+  .cv-title-koe { font-size: 38px; letter-spacing: -0.01em; margin-top: -18px; }
   .cv-spark     { font-size: 13px; top: -1px; right: -11px; }
   .cv-title-en  { font-size: 9px; }
   .cv-tag-jp    { font-size: 13px; margin-top: 4px; }

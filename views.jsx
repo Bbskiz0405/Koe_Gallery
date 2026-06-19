@@ -145,7 +145,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
       {/* ── top bar ── */}
       <div className="book-view-top">
         <div className="brand">
-          <div className="b-mark"><em>心咲</em><span className="b-koe">KOE</span></div>
+          <div className="b-mark"><em>心咲</em><span className="b-koe">KØE</span></div>
           <div className="b-sub">memorial · echo collection · vol. 01</div>
         </div>
         <div className="row" style={{ gap: 8 }}>
