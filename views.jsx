@@ -363,6 +363,7 @@ function UploadModal({ onClose, defaultPage = 0 }) {
   const [caption, setCaption] = vUseState("");
   const [uploading, setUploading] = vUseState(false);
   const [progress, setProgress]   = vUseState({});
+  const [result, setResult]       = vUseState({ ok: 0, errors: [] });
   const fileInputRef = vUseRef(null);
 
   const addFiles = (fileList) => {
@@ -382,6 +383,7 @@ function UploadModal({ onClose, defaultPage = 0 }) {
   const doUpload = async () => {
     setUploading(true);
     let n = 0;
+    const errors = [];
     for (const { file, id } of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
       const ref = storage.ref(`photos/${Date.now()}_${safeName}`);
@@ -402,8 +404,12 @@ function UploadModal({ onClose, defaultPage = 0 }) {
           uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
         n++;
-      } catch (err) { console.error("Upload error:", err); }
+      } catch (err) {
+        console.error("Upload error:", err);
+        errors.push(`${file.name}：${(err && err.message) || err}`);
+      }
     }
+    setResult({ ok: n, errors });
     setUploading(false);
     setStep(2);
   };
@@ -484,11 +490,33 @@ function UploadModal({ onClose, defaultPage = 0 }) {
           )}
           {step === 2 && (
             <div style={{ textAlign: "center", padding: "32px 0" }}>
-              <div style={{ width: 64, height: 64, borderRadius: 999, background: "var(--pink-soft)",
-                margin: "0 auto 18px", display: "grid", placeItems: "center" }}><Icon.check /></div>
-              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: "0 0 8px", fontWeight: 400 }}>上傳完成 ✦</h3>
-              <p className="muted" style={{ margin: "0 0 4px" }}>{files.length} 張照片已加入紀念冊</p>
-              <p className="mono muted" style={{ fontSize: 10 }}>ALL VISITORS CAN NOW SEE YOUR FANART</p>
+              <div style={{ width: 64, height: 64, borderRadius: 999,
+                background: result.errors.length ? "var(--peach)" : "var(--pink-soft)",
+                color: result.errors.length ? "var(--pink-deep)" : "inherit",
+                fontSize: 30, fontWeight: 600,
+                margin: "0 auto 18px", display: "grid", placeItems: "center" }}>
+                {result.errors.length ? "!" : <Icon.check />}
+              </div>
+              {result.ok > 0 && result.errors.length === 0 && (
+                <>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: "0 0 8px", fontWeight: 400 }}>上傳完成 ✦</h3>
+                  <p className="muted" style={{ margin: "0 0 4px" }}>{result.ok} 張照片已加入紀念冊</p>
+                  <p className="mono muted" style={{ fontSize: 10 }}>ALL VISITORS CAN NOW SEE YOUR FANART</p>
+                </>
+              )}
+              {result.errors.length > 0 && (
+                <>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "0 0 8px", fontWeight: 400 }}>
+                    {result.ok > 0 ? "部分未成功" : "上傳失敗"}
+                  </h3>
+                  <p className="muted" style={{ margin: "0 0 10px" }}>
+                    成功 {result.ok} 張 · 失敗 {result.errors.length} 張
+                  </p>
+                  <div className="mono muted" style={{ textAlign: "left", margin: "0 auto", maxWidth: 380, fontSize: 11, lineHeight: 1.6 }}>
+                    {result.errors.map((e, i) => <div key={i} style={{ marginBottom: 4 }}>• {e}</div>)}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
