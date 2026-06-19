@@ -271,74 +271,55 @@ function reportPage(pages, spread, onPageChange) {
   if (c !== null) onPageChange(c);
 }
 
-// ─── Mobile spread viewer — same two-page spread, scaled to fit ───
+// ─── Mobile single-page viewer — one full-size page at a time ───
+// Open cover → see the left page; tap (or "next") slides to the next page,
+// one page per step, just like turning a single leaf on a phone.
 function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, getPhotoKey,
                           onPageChange, ...collageProps }) {
-  const total        = pages.length;
-  const totalSpreads = Math.floor(total / 2);
-  const [spread, setSpread] = fbUseState(0);
-  const [fading, setFading] = fbUseState(false);
-  const wrapRef = fbUseRef(null);
-  const [scale, setScale]   = fbUseState(0.38);
+  // Show every real page individually (blank spacer pages are skipped).
+  const seq   = pages.filter(p => p.kind !== "blank");
+  const total = seq.length;
+  const [idx, setIdx] = fbUseState(0);
+  const [dir, setDir] = fbUseState("next");
 
+  // Keep the editing toolbar pointed at the collage page currently on screen.
   fbUseEffect(() => {
-    const update = () => {
-      if (wrapRef.current) setScale(wrapRef.current.offsetWidth / 920);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  fbUseEffect(() => { reportPage(pages, spread, onPageChange); }, [spread]);
+    const p = seq[idx];
+    if (onPageChange && p && p.kind === "collage") onPageChange(p.cindex);
+  }, [idx]);
 
   const go = (delta) => {
-    if (fading) return;
-    const target = spread + delta;
-    if (target < 0 || target >= totalSpreads) return;
-    setFading(true);
-    setTimeout(() => { setSpread(target); setFading(false); }, 260);
+    const target = idx + delta;
+    if (target < 0 || target >= total) return;
+    setDir(delta > 0 ? "next" : "prev");
+    setIdx(target);
   };
 
-  const lPage = pages[spread * 2];
-  const rPage = pages[spread * 2 + 1];
+  // Tap an empty area of the page to advance. Tapping a photo zooms it
+  // (CollagePhoto stops propagation), so the two never conflict.
+  const onTapPage = () => {
+    if (collageProps.editing) return;
+    if (idx < total - 1) go(1);
+  };
+
+  const page = seq[idx];
+  const side = idx % 2 === 0 ? "left" : "right";
   const commonProps = { onOpenPhoto, albumId: album.id, totalPages: total, photosMap, placedStickers, getPhotoKey, ...collageProps };
 
   return (
     <div className="flipbook-wrap">
-      <div className="flipbook-table" style={{ padding: "16px 8px 56px" }}>
-        <div className="flipbook-mobile-wrap" ref={wrapRef} style={{ height: `${600 * scale}px` }}>
-          <div className="flipbook"
-            style={{ transform: `scale(${scale})`, transformOrigin: "top left",
-                     opacity: fading ? 0 : 1, transition: "opacity 0.26s ease" }}>
-            <div className="fb-shadow-base" />
-            <div className="fb-static left">
-              <PageFace page={lPage} side="left"  pageNum={spread * 2 + 1} {...commonProps} />
-            </div>
-            <div className="fb-static right">
-              <PageFace page={rPage} side="right" pageNum={spread * 2 + 2} {...commonProps} />
-            </div>
-            <div className="fb-spine" />
-            <div className="fb-corner prev" onClick={() => go(-1)}
-              style={{ opacity: spread === 0 ? 0.3 : 1, pointerEvents: spread === 0 ? "none" : "auto" }}>
-              <div className="fb-corner-arrow">
-                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M7 1 L 3 5 L 7 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"/></svg>
-              </div>
-            </div>
-            <div className="fb-corner next" onClick={() => go(1)}
-              style={{ opacity: spread >= totalSpreads - 1 ? 0.3 : 1, pointerEvents: spread >= totalSpreads - 1 ? "none" : "auto" }}>
-              <div className="fb-corner-arrow">
-                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1 L 7 5 L 3 9" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"/></svg>
-              </div>
-            </div>
+      <div className="flipbook-table mobile-single">
+        <div className="fb-single">
+          <div key={idx} className={`fb-single-page anim-in-${dir}`} onClick={onTapPage}>
+            <PageFace page={page} side={side} pageNum={idx + 1} {...commonProps} />
           </div>
         </div>
       </div>
       <div className="fb-nav">
-        <button className="btn" onClick={() => go(-1)} disabled={spread === 0}>← prev</button>
-        <div className="scrub"><div className="fill" style={{ width: `${(spread + 1) / totalSpreads * 100}%` }} /></div>
-        <div className="progress">{String(spread + 1).padStart(2, "0")} / {String(totalSpreads).padStart(2, "0")}</div>
-        <button className="btn primary" onClick={() => go(1)} disabled={spread >= totalSpreads - 1}>next →</button>
+        <button className="btn" onClick={() => go(-1)} disabled={idx === 0}>← prev</button>
+        <div className="scrub"><div className="fill" style={{ width: `${(idx + 1) / total * 100}%` }} /></div>
+        <div className="progress">{String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</div>
+        <button className="btn primary" onClick={() => go(1)} disabled={idx >= total - 1}>next →</button>
       </div>
     </div>
   );

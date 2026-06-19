@@ -1609,8 +1609,12 @@ button { font-family: inherit; cursor: pointer; }
   .app-main { padding: 18px 16px 80px; }
 
   /* ── Landing wrapper ── */
-  .landing { padding: 14px 18px 18px; }
+  .landing { padding: 14px 16px 18px; }
+  /* Stack brand + chips so they never overflow the narrow viewport */
+  .landing-meta-top { flex-direction: column; align-items: flex-start; gap: 8px; }
   .landing-meta-top .brand .b-mark { font-size: 18px; }
+  .landing-meta-top .brand .b-sub { display: none; }
+  .landing-meta-top .row { flex-wrap: wrap; gap: 6px; }
   .landing-meta-bot { font-size: 9px; letter-spacing: 0.2em; }
 
   /* Shrink the 3-D stage from 820×540 → 340×224  (scale ≈ 0.415) */
@@ -1656,6 +1660,11 @@ button { font-family: inherit; cursor: pointer; }
   .cv-tag-en    { font-size: 8px; }
   .cv-years     { font-size: 11px; gap: 5px; }
   .cv-credit    { font-size: 7px; }
+  /* Foot date + stamps must fit the narrow cover — shrink + tighten tracking */
+  .cv-foot      { gap: 5px; }
+  .cv-foot-date  { font-size: 6.5px; letter-spacing: 0.08em; }
+  .cv-foot-row   { gap: 12px; }
+  .cv-foot-stamp { font-size: 6.5px; letter-spacing: 0.08em; }
 
   /* Inside cover & first page */
   .inside-cover  { padding: 24px 18px; gap: 10px; }
@@ -1696,57 +1705,50 @@ button { font-family: inherit; cursor: pointer; }
   .book-view-top .layout-switch { flex-shrink: 0; }
   .book-view-top .layout-switch button { padding: 5px 8px; font-size: 9px; }
 
-  /* ── Mobile spread flipbook (scaled two-page) ── */
-  .flipbook-mobile-wrap {
-    width: calc(100vw - 24px);
-    max-width: 400px;
-    margin: 0 auto;
+  /* ── Mobile single-page flipbook (one full page at a time) ── */
+  .flipbook-table.mobile-single {
+    width: 100%;
+    padding: 12px 6px 20px;
+    background: none;       /* drop the wide desktop halo on mobile */
+  }
+  .flipbook-table.mobile-single::before { display: none; }
+  .fb-single {
+    display: grid; place-items: center;
+    width: 100%;
+    overflow: hidden;       /* clip the slide-in so it doesn't cause h-scroll */
+  }
+  .fb-single-page {
     position: relative;
-    overflow: hidden;
-    border-radius: var(--radius);
-    /* height driven by JS scale */
-  }
-
-  /* ── (legacy single-page styles kept but unused) ── */
-  .flipbook-mobile {
-    position: relative;
-    width: calc(100vw - 24px);
-    max-width: 380px;
-    height: 480px;
-    margin: 0 auto;
-  }
-  .fb-mobile-page {
-    position: absolute; inset: 0;
-  }
-  .fb-mobile-page .fb-page {
-    position: absolute; inset: 0;
+    width: min(calc(100vw - 36px), 420px);
+    aspect-ratio: 460 / 600;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    box-shadow: 0 16px 44px rgba(29,21,53,0.20), 0 3px 10px rgba(29,21,53,0.10);
+    cursor: pointer;
   }
-  .flipbook-mobile .fb-page.page-left,
-  .flipbook-mobile .fb-page.page-right {
-    box-shadow: 0 12px 40px rgba(29,21,53,0.18), 0 2px 8px rgba(29,21,53,0.08);
+  .fb-single-page .fb-page {
+    border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 1px var(--paper-edge) inset;
   }
-  .flipbook-mobile .fb-page.page-left .fb-page-inner,
-  .flipbook-mobile .fb-page.page-right .fb-page-inner {
-    left: 24px; right: 24px; inset: 20px 24px; overflow: hidden;
+  .fb-single-page .fb-page.page-left .fb-page-inner,
+  .fb-single-page .fb-page.page-right .fb-page-inner {
+    inset: 22px 22px; left: 22px; right: 22px; overflow: hidden;
   }
-  .flipbook-mobile .fb-pagenum  { font-size: 9px; bottom: 10px; right: 20px; left: auto; }
-  .flipbook-mobile .fb-pageglyph { font-size: 9px; top: 14px; left: 20px; right: auto; }
-  .flipbook-mobile .fb-corner { width: 60px; }
-  .flipbook-mobile .fb-corner-arrow { width: 28px; height: 28px; bottom: 14px; opacity: 0.7; }
-  .flipbook-mobile .fb-corner.prev .fb-corner-arrow { left: 10px; }
-  .flipbook-mobile .fb-corner.next .fb-corner-arrow { right: 10px; }
+  .fb-single-page .fb-pagenum  { font-size: 9px; bottom: 10px; right: 18px; left: auto; }
+  .fb-single-page .fb-page.page-left .fb-pagenum { left: 18px; right: auto; }
+  .fb-single-page .fb-pageglyph { font-size: 9px; top: 14px; left: 18px; right: auto; }
+  .fb-single-page .fb-page.page-right .fb-pageglyph { right: 18px; left: auto; }
+
   @keyframes fb-slide-in-next {
-    from { opacity: 0; transform: translateX(48px); }
+    from { opacity: 0; transform: translateX(40px); }
     to   { opacity: 1; transform: translateX(0); }
   }
   @keyframes fb-slide-in-prev {
-    from { opacity: 0; transform: translateX(-48px); }
+    from { opacity: 0; transform: translateX(-40px); }
     to   { opacity: 1; transform: translateX(0); }
   }
-  .fb-mobile-page.anim-in-next { animation: fb-slide-in-next 0.35s cubic-bezier(.2,.8,.4,1) forwards; }
-  .fb-mobile-page.anim-in-prev { animation: fb-slide-in-prev 0.35s cubic-bezier(.2,.8,.4,1) forwards; }
+  .fb-single-page.anim-in-next { animation: fb-slide-in-next 0.32s cubic-bezier(.2,.8,.4,1); }
+  .fb-single-page.anim-in-prev { animation: fb-slide-in-prev 0.32s cubic-bezier(.2,.8,.4,1); }
 
   .fb-nav         { gap: 8px; margin-top: 14px; }
   .fb-nav .scrub  { min-width: 100px; }
