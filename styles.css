@@ -1138,11 +1138,18 @@ button { font-family: inherit; cursor: pointer; }
   position: relative; z-index: 2;
 }
 .cv-title-koe {
-  font-family: var(--font-en-display);
-  font-size: 32px; letter-spacing: 0.32em;
-  color: var(--ink);
-  margin-top: 2px;
-  position: relative; z-index: 1;
+  font-family: 'Pinyon Script', cursive;
+  font-size: 68px; letter-spacing: 0.02em; line-height: 1;
+  color: var(--pink-deep);
+  margin-top: -22px;          /* overlap up into the lower strokes of 心咲 */
+  position: relative; z-index: 3;
+}
+/* sparkle at the top-right of 咲, matching the official logo */
+.cv-spark {
+  position: absolute; top: -2px; right: -18px;
+  font-family: var(--font-display); font-size: 22px; line-height: 1;
+  color: var(--pink-deep);
+  pointer-events: none;
 }
 .cv-divider {
   display: flex; align-items: center; gap: 12px;
@@ -1655,7 +1662,8 @@ button { font-family: inherit; cursor: pointer; }
   .cv-corner { width: 18px; height: 18px; }
   .cv-divider .cv-rule { width: 30px; }
   .cv-title-zh  { font-size: 38px; }
-  .cv-title-koe { font-size: 17px; letter-spacing: 0.28em; margin-top: 1px; }
+  .cv-title-koe { font-size: 38px; letter-spacing: 0.02em; margin-top: -13px; }
+  .cv-spark     { font-size: 13px; top: -1px; right: -11px; }
   .cv-title-en  { font-size: 9px; }
   .cv-tag-jp    { font-size: 13px; margin-top: 4px; }
   .cv-tag-en    { font-size: 8px; }

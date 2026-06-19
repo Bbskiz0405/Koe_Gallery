@@ -27,7 +27,7 @@ function CoverContent({ memorial = true }) {
 
       <div className="cv-mid">
         <div className="cv-title-block">
-          <div className="cv-title-zh">心咲</div>
+          <div className="cv-title-zh">心咲<span className="cv-spark">✦</span></div>
           <div className="cv-title-koe">KOE</div>
         </div>
         <div className="cv-divider">
