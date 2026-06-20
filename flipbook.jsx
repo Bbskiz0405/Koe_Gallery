@@ -49,9 +49,11 @@ function CollagePhoto({ photo, idx, editing, selected, onSelect, onUpdate, onPer
 
   const x = photo.x ?? 50, y = photo.y ?? 50;
   const rot = photo.rot ?? 0, scale = photo.scale ?? 1;
-  const halfW = (50 * scale) / 2; // photo width ≈ 50% of page * scale
 
-  const clamp = (v) => Math.max(halfW + 2, Math.min(100 - halfW - 2, v));
+  // Clamp the photo's CENTER (not its bounding box) to the page, so a large or
+  // scaled-up photo can still always be grabbed and dragged — it just bleeds off
+  // the edge (the page clips it). Prevents photos getting "stuck" at the edge.
+  const clamp = (v) => Math.max(5, Math.min(95, v));
 
   const onPointerDown = (e, mode = "move") => {
     if (!editing) return;
@@ -282,13 +284,15 @@ function useMobile() {
   return mobile;
 }
 
-// report the collage page index currently in view (left page first) upward
+// report the collage pages currently open (both left & right) upward,
+// so the upload modal can offer "left page / right page" as a target.
 function reportPage(pages, spread, onPageChange) {
   if (!onPageChange) return;
   const l = pages[spread * 2], r = pages[spread * 2 + 1];
-  const c = (l && l.kind === "collage") ? l.cindex
-          : (r && r.kind === "collage") ? r.cindex : null;
-  if (c !== null) onPageChange(c);
+  const out = [];
+  if (l && l.kind === "collage") out.push({ cindex: l.cindex, side: "左頁", num: spread * 2 + 1 });
+  if (r && r.kind === "collage") out.push({ cindex: r.cindex, side: "右頁", num: spread * 2 + 2 });
+  if (out.length) onPageChange({ pages: out, primary: out[0].cindex });
 }
 
 // ─── Mobile single-page viewer — one full-size page at a time ───
@@ -305,7 +309,8 @@ function MobileFlipBook({ pages, album, onOpenPhoto, photosMap, placedStickers, 
   // Keep the editing toolbar pointed at the collage page currently on screen.
   fbUseEffect(() => {
     const p = seq[idx];
-    if (onPageChange && p && p.kind === "collage") onPageChange(p.cindex);
+    if (onPageChange && p && p.kind === "collage")
+      onPageChange({ pages: [{ cindex: p.cindex, side: idx % 2 === 0 ? "左頁" : "右頁", num: idx + 1 }], primary: p.cindex });
   }, [idx]);
 
   const go = (delta) => {

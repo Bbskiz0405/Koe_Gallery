@@ -163,6 +163,16 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           <button className={`btn ${editing ? "primary" : ""}`} onClick={() => { setEditing(!editing); setSelectedPhoto(null); }}>
             <Icon.edit /> {editing ? "完成" : "排版"}
           </button>
+          {editing && layout === "book" && selectedPhoto !== null && photosMap?.[selectedPhoto] && (
+            <button className="btn pink" title="刪除目前選取的照片"
+              onClick={() => {
+                if (!window.confirm("確定要刪除這張照片嗎？此動作無法復原。")) return;
+                onDeletePhoto(photosMap[selectedPhoto].id);
+                setSelectedPhoto(null);
+              }}>
+              <Icon.close /> 刪除這張
+            </button>
+          )}
           {layout === "book" && (
             <button className="btn" onClick={onAddPage} title="在書末新增一頁空白拼貼頁">＋ 加一頁</button>
           )}
@@ -224,7 +234,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
         <div className="edit-banner">
           <div className="dot" />
           <span className="mono">
-            {layout === "book" ? "編輯模式 · 拖曳照片擺放，↻ 角落旋轉縮放，✕ 移除"
+            {layout === "book" ? "編輯模式 · 拖曳照片擺放，↻ 角落旋轉縮放，✕ 或上方「刪除這張」移除"
               : "編輯模式 · 拖曳照片重新排序"}
           </span>
         </div>
@@ -336,7 +346,10 @@ function Lightbox({ seed, photoUrl, stickers = [], onDeleteSticker, onClose }) {
 // ────────────────────────────────────────
 // UPLOAD MODAL
 // ────────────────────────────────────────
-function UploadModal({ onClose, defaultPage = 0 }) {
+function UploadModal({ onClose, pageOptions = { pages: [{ cindex: 0, side: "左頁", num: 1 }], primary: 0 } }) {
+  const pageOpts = (pageOptions.pages && pageOptions.pages.length)
+    ? pageOptions.pages : [{ cindex: 0, side: "左頁", num: 1 }];
+  const [targetPage, setTargetPage] = vUseState(pageOptions.primary ?? pageOpts[0].cindex);
   const [step, setStep]     = vUseState(0);
   const [files, setFiles]   = vUseState([]);
   const [hot, setHot]       = vUseState(false);
@@ -378,7 +391,7 @@ function UploadModal({ onClose, defaultPage = 0 }) {
         const url = await ref.getDownloadURL();
         await db.collection("photos").add({
           url, caption: caption || "",
-          page: defaultPage,
+          page: targetPage,
           x: 42 + (n % 3) * 8, y: 42 + (Math.floor(n / 3) % 3) * 8,
           rot: 0, scale: 1,
           uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -441,6 +454,18 @@ function UploadModal({ onClose, defaultPage = 0 }) {
           )}
           {step === 1 && (
             <>
+              <div className="form-row">
+                <label>放到哪一頁</label>
+                <div className="row" style={{ gap: 8 }}>
+                  {pageOpts.map(o => (
+                    <button key={o.cindex}
+                      className={`chip ${targetPage === o.cindex ? "active" : ""}`}
+                      onClick={() => setTargetPage(o.cindex)}>
+                      {o.side}（P.{o.num}）
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="form-row">
                 <label>標題</label>
                 <input type="text" maxLength={40} placeholder="幫這張照片下一個標題…（會顯示在拍立得照片下方）"

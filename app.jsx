@@ -30,7 +30,7 @@ function App() {
   const [placedStickers, setPlacedStickers] = aUseState({});
   const [photos, setPhotos]                 = aUseState([]);
   const [collagePages, setCollagePages]     = aUseState(4);
-  const [currentCollagePage, setCurrentCollagePage] = aUseState(0);
+  const [pageOptions, setPageOptions] = aUseState({ pages: [{ cindex: 0, side: "左頁", num: 1 }], primary: 0 });
   const photosRef = React.useRef(photos);
   photosRef.current = photos;
 
@@ -174,7 +174,7 @@ function App() {
             getPhotoKey={getPhotoKey}
             photos={photos}
             collagePages={effectivePages}
-            onPageChange={setCurrentCollagePage}
+            onPageChange={setPageOptions}
             onUpdatePhoto={updatePhotoLocal}
             onPersistPhoto={persistPhoto}
             onDeletePhoto={deletePhoto}
@@ -193,7 +193,7 @@ function App() {
         />
       )}
 
-      {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} defaultPage={currentCollagePage} />}
+      {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} pageOptions={pageOptions} />}
 
       <TweaksPanel title="Tweaks · 心咲KOE">
         <TweakSection label="封面">
