@@ -77,6 +77,18 @@ function App() {
       .catch(e => console.error("Add page:", e));
   };
 
+  // Remove the last collage page — but only if it's empty. The floor is
+  // maxPhotoPage+1 so a page that still holds a photo can never be removed.
+  const removePage = () => {
+    const maxP = photosRef.current.reduce((m, p) => Math.max(m, (p.page ?? 0)), 0);
+    const floor = Math.max(1, maxP + 1);
+    const next = Math.max(floor, collagePages - 1);
+    if (next === collagePages) return; // nothing safe to remove
+    setCollagePages(next);
+    db.collection("meta").doc("memorial").set({ pages: next }, { merge: true })
+      .catch(e => console.error("Remove page:", e));
+  };
+
   // load stickers from Firestore and reconstruct render functions
   aUseEffect(() => {
     const unsub = db.collection("stickers").onSnapshot(
@@ -179,6 +191,8 @@ function App() {
             onPersistPhoto={persistPhoto}
             onDeletePhoto={deletePhoto}
             onAddPage={addPage}
+            onRemovePage={removePage}
+            canRemovePage={effectivePages > Math.max(1, maxPhotoPage + 1)}
           />
         </div>
       )}

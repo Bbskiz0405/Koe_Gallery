@@ -15,7 +15,7 @@ const STICKERS_ENABLED = true;  // ✦ 貼紙（可獨立保留，與上面互�
 function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
                     placedStickers, setPlacedStickers, photosMap, getPhotoKey,
                     photos, collagePages, onPageChange, onUpdatePhoto, onPersistPhoto,
-                    onDeletePhoto, onAddPage }) {
+                    onDeletePhoto, onAddPage, onRemovePage, canRemovePage }) {
 
   const [editing, setEditing]   = vUseState(false);
   const [selectedPhoto, setSelectedPhoto] = vUseState(null);
@@ -202,6 +202,11 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
             )}
             {EDIT_ENABLED && layout === "book" && (
               <button className="btn" onClick={onAddPage} title="在書末新增一頁空白拼貼頁">＋ 加一頁</button>
+            )}
+            {EDIT_ENABLED && layout === "book" && (
+              <button className="btn" onClick={onRemovePage} disabled={!canRemovePage}
+                style={{ opacity: canRemovePage ? 1 : 0.4 }}
+                title="移除書末的空白頁（不會刪到有照片的頁）">－ 減一頁</button>
             )}
             {EDIT_ENABLED && (
               <button className="btn pink" onClick={onUpload}><Icon.upload /> 加照片</button>
