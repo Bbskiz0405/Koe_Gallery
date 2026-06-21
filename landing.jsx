@@ -89,7 +89,7 @@ function FirstContentPage() {
 // we skip the page-flip entirely and let the cross-fade hand-off carry the eye
 // from the (big, centered) closed cover straight to the book view.
 const isMobile = () =>
-  typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+  typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches;
 
 function LandingView({ orientation, onOpen, autoClose, onClosed }) {
   // On mobile, start the closing remount already "idle" (no reverse flip).

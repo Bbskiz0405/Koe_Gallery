@@ -1652,26 +1652,34 @@ button { font-family: inherit; cursor: pointer; }
   .landing-meta-top .row { flex-wrap: wrap; gap: 6px; }
   .landing-meta-bot { font-size: 9px; letter-spacing: 0.2em; }
 
-  /* Mobile skips the page-flip (see landing.jsx), so the stage only ever
-     shows the CLOSED cover — its right half. Size it big (560×400 → cover
-     280×400) and center it properly: shift left by ¼ width (-140px) so the
-     right-half cover lands dead-center instead of small & off to the side. */
+  /* Mobile shows ONLY the closed cover (no page-flip). Drop the desktop
+     "stage = 2× cover, reveal the right half" trick — on a narrow screen a
+     stage wider than the viewport can't be centered reliably (it overflows to
+     the right). Instead the stage IS the cover: a single full-width cover-leaf
+     with NO horizontal shift, so normal centering keeps it dead-center. */
   .landing-stage {
-    width: 560px; height: 400px;
+    width: min(80vw, 330px);
+    aspect-ratio: 72 / 100;
+    height: auto;
     perspective: 1400px;
     -webkit-perspective: 1400px;
   }
+  .landing-cover-leaf { left: 0; right: auto; width: 100%; }
   .landing.ori-floating .landing-stage {
-    transform: translateX(-140px) rotateX(2deg) rotateY(-4deg);
+    transform: rotateX(2deg) rotateY(-4deg);
     animation: book-float-sm 7s ease-in-out infinite;
   }
   @keyframes book-float-sm {
-    0%, 100% { transform: translateX(-140px) rotateX(2deg) rotateY(-4deg) translateY(0); }
-    50%       { transform: translateX(-140px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
+    0%, 100% { transform: rotateX(2deg) rotateY(-4deg) translateY(0); }
+    50%       { transform: rotateX(2deg) rotateY(-4deg) translateY(-6px); }
   }
   .landing.ori-flat .landing-stage {
-    transform: translateX(-140px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
+    transform: rotateX(20deg) rotateY(-6deg) rotateZ(-1deg);
   }
+  /* Closed-book chrome assumed a center fold at 50% — hide the bits that would
+     otherwise land in the middle of the single cover. */
+  .landing-thickness, .landing-bookmark,
+  .landing-page-edge, .landing-back-cover { display: none; }
   .landing.phase-lift .landing-stage,
   .landing.phase-open .landing-stage,
   .landing.phase-closing .landing-stage {
