@@ -201,7 +201,7 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
               </button>
             )}
             {EDIT_ENABLED && layout === "book" && (
-              <button className="btn" onClick={onAddPage} title="在書末新增一個對頁（兩頁空白拼貼頁）">＋ 加兩頁</button>
+              <button className="btn" onClick={onAddPage} title="在書末新增一個對頁（兩頁空白拼貼頁）">＋ 加一頁</button>
             )}
             {EDIT_ENABLED && (
               <button className="btn pink" onClick={onUpload}><Icon.upload /> 加照片</button>
