@@ -1284,6 +1284,9 @@ button { font-family: inherit; cursor: pointer; }
 .book-view-top .brand .b-koe { font-size: 1.25em; }
 .book-view-top .brand .b-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-mute); text-transform: uppercase; }
 .book-view-top .row { gap: 10px; flex-wrap: nowrap; }
+/* Editing tools: inline on desktop (collapse trigger hidden) */
+.tools-toggle { display: none; }
+.book-view-top .tools-group { display: flex; align-items: center; gap: 10px; }
 
 /* ════════════════════════════════════════════════════════════════
    FLIPBOOK — page-turn album viewer
@@ -1649,22 +1652,25 @@ button { font-family: inherit; cursor: pointer; }
   .landing-meta-top .row { flex-wrap: wrap; gap: 6px; }
   .landing-meta-bot { font-size: 9px; letter-spacing: 0.2em; }
 
-  /* Shrink the 3-D stage from 820×540 → 410×270  (scale ≈ 0.50) */
+  /* Mobile skips the page-flip (see landing.jsx), so the stage only ever
+     shows the CLOSED cover — its right half. Size it big (560×400 → cover
+     280×400) and center it properly: shift left by ¼ width (-140px) so the
+     right-half cover lands dead-center instead of small & off to the side. */
   .landing-stage {
-    width: 410px; height: 270px;
-    perspective: 1200px;
-    -webkit-perspective: 1200px;
+    width: 560px; height: 400px;
+    perspective: 1400px;
+    -webkit-perspective: 1400px;
   }
   .landing.ori-floating .landing-stage {
-    transform: translateX(-52px) rotateX(2deg) rotateY(-4deg);
+    transform: translateX(-140px) rotateX(2deg) rotateY(-4deg);
     animation: book-float-sm 7s ease-in-out infinite;
   }
   @keyframes book-float-sm {
-    0%, 100% { transform: translateX(-52px) rotateX(2deg) rotateY(-4deg) translateY(0); }
-    50%       { transform: translateX(-52px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
+    0%, 100% { transform: translateX(-140px) rotateX(2deg) rotateY(-4deg) translateY(0); }
+    50%       { transform: translateX(-140px) rotateX(2deg) rotateY(-4deg) translateY(-6px); }
   }
   .landing.ori-flat .landing-stage {
-    transform: translateX(-52px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
+    transform: translateX(-140px) rotateX(28deg) rotateY(-10deg) rotateZ(-2deg);
   }
   .landing.phase-lift .landing-stage,
   .landing.phase-open .landing-stage,
@@ -1674,30 +1680,30 @@ button { font-family: inherit; cursor: pointer; }
   }
 
   /* Decorative chrome proportional to the smaller stage */
-  .landing-thickness { left: calc(50% - 10px); width: 20px; }
+  .landing-thickness { left: calc(50% - 11px); width: 22px; }
   .landing-page-edge { left: calc(50% + 4px); right: 4px; height: 4px; }
-  .landing-bookmark  { left: calc(50% + 44px); width: 12px; height: 90px; top: -4px; }
+  .landing-bookmark  { left: calc(50% + 54px); width: 14px; height: 124px; top: -4px; }
 
-  /* Cover content — fonts scale with the smaller book face */
-  .cover-content { inset: 12px; padding: 16px 14px; }
-  .cv-stamp  { font-size: 7px; letter-spacing: 0.16em; }
-  .cv-mark   { font-size: 16px; }
-  .cv-mid    { gap: 6px; padding: 6px 0; }
-  .cv-corner { width: 18px; height: 18px; }
-  .cv-divider .cv-rule { width: 30px; }
-  .cv-title-zh  { font-size: 38px; }
-  .cv-title-koe { font-size: 38px; letter-spacing: -0.01em; margin-top: -18px; }
-  .cv-spark     { font-size: 13px; top: -1px; right: -11px; }
-  .cv-title-en  { font-size: 9px; }
-  .cv-tag-jp    { font-size: 13px; margin-top: 4px; }
-  .cv-tag-en    { font-size: 8px; }
-  .cv-years     { font-size: 11px; gap: 5px; }
-  .cv-credit    { font-size: 7px; }
-  /* Foot date + stamps must fit the narrow cover — shrink + tighten tracking */
-  .cv-foot      { gap: 5px; }
-  .cv-foot-date  { font-size: 6.5px; letter-spacing: 0.08em; }
-  .cv-foot-row   { gap: 12px; }
-  .cv-foot-stamp { font-size: 6.5px; letter-spacing: 0.08em; }
+  /* Cover content — fonts scaled up for the bigger 280×400 book face */
+  .cover-content { inset: 14px; padding: 20px 18px; }
+  .cv-stamp  { font-size: 8.5px; letter-spacing: 0.16em; }
+  .cv-mark   { font-size: 20px; }
+  .cv-mid    { gap: 8px; padding: 8px 0; }
+  .cv-corner { width: 22px; height: 22px; }
+  .cv-divider .cv-rule { width: 40px; }
+  .cv-title-zh  { font-size: 50px; }
+  .cv-title-koe { font-size: 50px; letter-spacing: -0.01em; margin-top: -24px; }
+  .cv-spark     { font-size: 16px; top: -1px; right: -14px; }
+  .cv-title-en  { font-size: 11px; }
+  .cv-tag-jp    { font-size: 17px; margin-top: 6px; }
+  .cv-tag-en    { font-size: 10px; }
+  .cv-years     { font-size: 14px; gap: 6px; }
+  .cv-credit    { font-size: 8.5px; }
+  /* Foot date + stamps */
+  .cv-foot      { gap: 6px; }
+  .cv-foot-date  { font-size: 8.5px; letter-spacing: 0.1em; }
+  .cv-foot-row   { gap: 16px; }
+  .cv-foot-stamp { font-size: 8.5px; letter-spacing: 0.1em; }
 
   /* Inside cover & first page */
   .inside-cover  { padding: 24px 18px; gap: 10px; }
@@ -1737,6 +1743,19 @@ button { font-family: inherit; cursor: pointer; }
   .book-view-top .btn { padding: 7px 10px; font-size: 11px; gap: 5px; }
   .book-view-top .layout-switch { flex-shrink: 0; }
   .book-view-top .layout-switch button { padding: 5px 8px; font-size: 9px; }
+
+  /* Editing tools collapse behind the 「工具」 button.
+     Row 2 shows just [翻頁/拍立得] + [工具]; tapping 工具 drops the
+     full tool set into a wrap-around drawer below. */
+  .book-view-top .tools-toggle { display: inline-flex; margin-left: auto; }
+  .book-view-top .tools-group {
+    display: none;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .book-view-top .tools-group.open { display: flex; }
 
   /* ── Mobile single-page flipbook (one full page at a time) ── */
   .flipbook-table.mobile-single {

@@ -1,6 +1,14 @@
 // Views for KOE album site — BookView, Lightbox, Upload modal
 const { useState: vUseState, useEffect: vUseEffect, useRef: vUseRef } = React;
 
+// ── Feature gates ──────────────────────────────────────────────
+// Launch-day kill switch: flip to false to hide editing/upload site-wide.
+// Hiding ONLY affects the UI — every photo & sticker already in Firebase
+// stays exactly where it is, and turning a flag back to true brings the
+// buttons (and the data) right back.
+const EDIT_ENABLED     = true;  // 排版 / 加一頁 / 加照片 / 刪除這張
+const STICKERS_ENABLED = true;  // ✦ 貼紙（可獨立保留，與上面互不影響）
+
 // ────────────────────────────────────────
 // BOOK VIEW
 // ────────────────────────────────────────
@@ -12,6 +20,9 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
   const [editing, setEditing]   = vUseState(false);
   const [selectedPhoto, setSelectedPhoto] = vUseState(null);
   const [order, setOrder]       = vUseState(album.photoSeed);
+
+  // ── mobile: collapse the controls row behind one "工具" button ──
+  const [toolsOpen, setToolsOpen]     = vUseState(false);
 
   // ── quick sticker bar ──
   const [showBar, setShowBar]         = vUseState(false);
@@ -149,34 +160,53 @@ function BookView({ album, layout, setLayout, onClose, onUpload, onOpenPhoto,
           <div className="b-sub">memorial · echo collection · vol. 01</div>
         </div>
         <div className="row" style={{ gap: 8 }}>
+          {/* View switch — always visible (not an editing tool) */}
           <div className="layout-switch">
             <button className={layout === "book"    ? "on" : ""} onClick={() => setLayout("book")}>翻頁</button>
             <button className={layout === "polaroid"? "on" : ""} onClick={() => setLayout("polaroid")}>拍立得</button>
           </div>
-          <button
-            className={`btn ${showBar ? "pink" : ""}`}
-            onClick={() => { setShowBar(v => !v); setQuickSticker(null); }}
-            title="直接在書頁貼貼紙"
-          >
-            ✦ 貼紙
-          </button>
-          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => { setEditing(!editing); setSelectedPhoto(null); }}>
-            <Icon.edit /> {editing ? "完成" : "排版"}
-          </button>
-          {editing && layout === "book" && selectedPhoto !== null && photosMap?.[selectedPhoto] && (
-            <button className="btn pink" title="刪除目前選取的照片"
-              onClick={() => {
-                if (!window.confirm("確定要刪除這張照片嗎？此動作無法復原。")) return;
-                onDeletePhoto(photosMap[selectedPhoto].id);
-                setSelectedPhoto(null);
-              }}>
-              <Icon.close /> 刪除這張
+
+          {/* Mobile-only trigger: collapses the editing tools behind one button */}
+          {(EDIT_ENABLED || STICKERS_ENABLED) && (
+            <button className={`btn tools-toggle ${toolsOpen ? "primary" : ""}`}
+              onClick={() => setToolsOpen(v => !v)} title="展開編輯工具">
+              {toolsOpen ? <Icon.close /> : <Icon.edit />} {toolsOpen ? "收起" : "工具"}
             </button>
           )}
-          {layout === "book" && (
-            <button className="btn" onClick={onAddPage} title="在書末新增一頁空白拼貼頁">＋ 加一頁</button>
-          )}
-          <button className="btn pink" onClick={onUpload}><Icon.upload /> 加照片</button>
+
+          {/* Editing tools — inline on desktop, collapsible drawer on mobile */}
+          <div className={`tools-group ${toolsOpen ? "open" : ""}`}>
+            {STICKERS_ENABLED && (
+              <button
+                className={`btn ${showBar ? "pink" : ""}`}
+                onClick={() => { setShowBar(v => !v); setQuickSticker(null); }}
+                title="直接在書頁貼貼紙"
+              >
+                ✦ 貼紙
+              </button>
+            )}
+            {EDIT_ENABLED && (
+              <button className={`btn ${editing ? "primary" : ""}`} onClick={() => { setEditing(!editing); setSelectedPhoto(null); }}>
+                <Icon.edit /> {editing ? "完成" : "排版"}
+              </button>
+            )}
+            {EDIT_ENABLED && editing && layout === "book" && selectedPhoto !== null && photosMap?.[selectedPhoto] && (
+              <button className="btn pink" title="刪除目前選取的照片"
+                onClick={() => {
+                  if (!window.confirm("確定要刪除這張照片嗎？此動作無法復原。")) return;
+                  onDeletePhoto(photosMap[selectedPhoto].id);
+                  setSelectedPhoto(null);
+                }}>
+                <Icon.close /> 刪除這張
+              </button>
+            )}
+            {EDIT_ENABLED && layout === "book" && (
+              <button className="btn" onClick={onAddPage} title="在書末新增一頁空白拼貼頁">＋ 加一頁</button>
+            )}
+            {EDIT_ENABLED && (
+              <button className="btn pink" onClick={onUpload}><Icon.upload /> 加照片</button>
+            )}
+          </div>
         </div>
       </div>
 

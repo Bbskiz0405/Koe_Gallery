@@ -85,11 +85,19 @@ function FirstContentPage() {
 }
 
 // ─── Closed Book View ───
+// Phones are too narrow to show the open two-page spread mid-flip, so on mobile
+// we skip the page-flip entirely and let the cross-fade hand-off carry the eye
+// from the (big, centered) closed cover straight to the book view.
+const isMobile = () =>
+  typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+
 function LandingView({ orientation, onOpen, autoClose, onClosed }) {
-  const [phase, setPhase] = lUseState(autoClose ? "closing" : "idle"); // idle | lift | open | closing
+  // On mobile, start the closing remount already "idle" (no reverse flip).
+  const [phase, setPhase] = lUseState(autoClose && !isMobile() ? "closing" : "idle"); // idle | lift | open | closing
 
   const startOpen = () => {
     if (autoClose || phase !== "idle") return;
+    if (isMobile()) { setPhase("opening"); onOpen(); return; } // cross-fade only
     setPhase("lift");
     setTimeout(() => setPhase("open"), 450);
     setTimeout(() => onOpen(), 1700);
@@ -98,6 +106,10 @@ function LandingView({ orientation, onOpen, autoClose, onClosed }) {
   // Auto-play the closing sequence when mounted in close mode, then hand back.
   lUseEffect(() => {
     if (!autoClose) return;
+    if (isMobile()) { // no flip — just let the book cross-fade back to the cover
+      const t = setTimeout(() => onClosed && onClosed(), 520);
+      return () => clearTimeout(t);
+    }
     const t1 = setTimeout(() => setPhase("idle"), 1550); // flip done → settle
     const t2 = setTimeout(() => onClosed && onClosed(), 2150); // fully closed
     return () => { clearTimeout(t1); clearTimeout(t2); };
