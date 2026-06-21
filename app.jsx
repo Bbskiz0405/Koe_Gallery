@@ -69,24 +69,15 @@ function App() {
   const deletePhoto = (id) =>
     db.collection("photos").doc(id).delete().catch(e => console.error("Delete photo:", e));
 
+  // Add a full spread (兩頁) at a time, and keep the collage-page count even so
+  // the desktop two-page view never ends on a half-empty spread.
   const addPage = () => {
     const maxP = photosRef.current.reduce((m, p) => Math.max(m, (p.page ?? 0)), 0);
-    const next = Math.max(collagePages, maxP + 1) + 1;
+    let next = Math.max(collagePages, maxP + 1) + 2;
+    if (next % 2 !== 0) next += 1;
     setCollagePages(next);
     db.collection("meta").doc("memorial").set({ pages: next }, { merge: true })
       .catch(e => console.error("Add page:", e));
-  };
-
-  // Remove the last collage page — but only if it's empty. The floor is
-  // maxPhotoPage+1 so a page that still holds a photo can never be removed.
-  const removePage = () => {
-    const maxP = photosRef.current.reduce((m, p) => Math.max(m, (p.page ?? 0)), 0);
-    const floor = Math.max(1, maxP + 1);
-    const next = Math.max(floor, collagePages - 1);
-    if (next === collagePages) return; // nothing safe to remove
-    setCollagePages(next);
-    db.collection("meta").doc("memorial").set({ pages: next }, { merge: true })
-      .catch(e => console.error("Remove page:", e));
   };
 
   // load stickers from Firestore and reconstruct render functions
@@ -191,8 +182,6 @@ function App() {
             onPersistPhoto={persistPhoto}
             onDeletePhoto={deletePhoto}
             onAddPage={addPage}
-            onRemovePage={removePage}
-            canRemovePage={effectivePages > Math.max(1, maxPhotoPage + 1)}
           />
         </div>
       )}
