@@ -151,14 +151,20 @@ const WordBubble = ({ text, bg = "#fef3c7", color = "#1a1226", w = 70, h = 36 })
   </svg>
 );
 
-const TagSticker = ({ text, bg = "#f9a8d4", w = 72, h = 28 }) => (
-  <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
-    <path d={`M 4 4 L ${w - 8} 4 L ${w - 4} ${h / 2} L ${w - 8} ${h - 4} L 4 ${h - 4} Z`} fill={bg} stroke="#1a1226" strokeWidth="1.4" strokeLinejoin="round" />
-    <circle cx="10" cy={h / 2} r="2" fill="#1a1226" />
-    <text x={w * 0.55} y={h / 2 + 5} textAnchor="middle" fontFamily="JetBrains Mono, monospace"
-      fontSize="11" letterSpacing="1" fontWeight="600" fill="#1a1226" textRendering="optimizeLegibility">{text}</text>
-  </svg>
-);
+const TagSticker = ({ text, bg = "#f9a8d4", w = 72, h = 28 }) => {
+  const dark = bg === "#1d1535";
+  // text sits between the dot (left) and the tag point (right); force-fit so it never spills onto the border
+  const x0 = 16, x1 = w - 12, cx = (x0 + x1) / 2, fit = x1 - x0;
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
+      <path d={`M 4 4 L ${w - 8} 4 L ${w - 4} ${h / 2} L ${w - 8} ${h - 4} L 4 ${h - 4} Z`} fill={bg} stroke="#1a1226" strokeWidth="1.4" strokeLinejoin="round" />
+      <circle cx="10" cy={h / 2} r="2" fill={dark ? "#f7c948" : "#1a1226"} />
+      <text x={cx} y={h / 2 + 4} textAnchor="middle" textLength={fit} lengthAdjust="spacingAndGlyphs"
+        fontFamily="JetBrains Mono, monospace" fontSize="11" fontWeight="600"
+        fill={dark ? "#fff" : "#1a1226"} textRendering="optimizeLegibility">{text}</text>
+    </svg>
+  );
+};
 
 // ── Free-text sticker — renders whatever the user types (CJK-friendly) ──
 const TextSticker = ({ text = "" }) => (
@@ -224,7 +230,12 @@ const STICKER_PACKS = {
   words: {
     id: "words", label: "文字", labelEn: "Words",
     items: [
-      { id: "w-custom", custom: true, render: () => <TextSticker text="＋ 自由輸入" />, w: 90, h: 40 },
+      { id: "w-custom", custom: true,
+        render: () => <svg width="40" height="40" viewBox="0 0 80 80" fill="none">
+          <rect x="4" y="14" width="72" height="52" rx="16" fill="#fffdf7" stroke="#1a1226" strokeWidth="2.4" strokeDasharray="6 4" />
+          <text x="40" y="48" textAnchor="middle" textLength="56" lengthAdjust="spacingAndGlyphs"
+            fontFamily="'Klee One', cursive" fontSize="26" fontWeight="600" fill="#1a1226">＋字</text>
+        </svg>, w: 90, h: 40 },
       { id: "w-kawaii", render: () => <WordBubble text="kawaii" bg="#fbcfe8" />, w: 80, h: 40 },
       { id: "w-yume",   render: () => <WordBubble text="夢" bg="#fef3c7" />, w: 52, h: 40 },
       { id: "w-koe",    render: () => <WordBubble text="KOE" bg="#d4b8f2" />, w: 62, h: 40 },
