@@ -97,6 +97,23 @@
 - **手機工具列收成一顆按鈕**：`views.jsx` 把編輯工具包進 `.tools-group`，手機只顯示 `[翻頁/拍立得]` + 一顆「工具」鈕（`.tools-toggle`），點了才展開「貼紙/排版/加一頁/加照片」抽屜。電腦版「工具」鈕隱藏、工具照舊整排平鋪（不變）。
 - **新增公開鎖定開關**：`views.jsx` 頂部 `EDIT_ENABLED` / `STICKERS_ENABLED`（預設 `true`）。公開要藏編輯就把 `EDIT_ENABLED=false`（貼紙可留），改完 deploy 即可；只藏 UI、不動 Firebase 資料、改回 true 按鈕就回來。取代原本「公開日改規則」的計畫（主辦決定先用藏按鈕，甚至可能不關）。
 
+### 上線「鎖前 N 頁」分頁鎖定（2026-06-24，依主辦回饋）
+- **需求**：上線時把已排好的前幾頁鎖死（照片＋排版不被亂動），末尾留空白頁給來不及的人補圖；**貼紙全程開放**。
+- **設定集中在 `data.jsx`**：`LOCK_ENABLED`（預設 `false`）、`LOCKED_PAGES`（鎖住的拼貼頁數，`cindex < LOCKED_PAGES` 視為鎖定）、helper `isPageLocked(cindex)`。預設不影響站台。
+- **UI 層**：
+  - `flipbook.jsx`：被鎖的拼貼頁，照片以 `editing=false` 渲染 → 不能選取／拖曳／旋轉／縮放、不顯示 ✕↻ 把手，但**仍可點開放大看、仍可貼貼紙**；該頁排版模式顯示「🔒 已鎖定」角標、空白鎖定頁顯示「🔒 這一頁已鎖定」。
+  - `views.jsx` `UploadModal`：「放到哪一頁」只列出沒被鎖的頁；整個跨頁都鎖時顯示提示「請翻到後面開放頁再上傳」並停用「開始上傳」。
+  - `app.jsx`：`removePage` 下限與 `canRemovePage` 納入 `LOCKED_PAGES`，鎖住的頁刪不掉。
+- **規則層（真正鎖死）`firestore.rules`**：新增 `lockedPages()`（預設回傳 `0` ＝ 與上線前完全相同）。`photos` 的 `create/update/delete` 改成只有 `page >= lockedPages()` 才放行（`pageUnlocked()` helper，`is number` 比較，`0` 時全放行不影響舊照片）。`stickers`/`meta` 規則不動 → 貼紙照常。
+- **快取破壞**：`index.html` 全部 `?v=28` → `?v=29`。
+- **上線當天操作（兩邊數字要一致）**：
+  1. `data.jsx`：`LOCKED_PAGES` 設成「目前已排好的拼貼頁總數」、`LOCK_ENABLED = true`。
+  2. （要開放補圖）進「排版」在書末按幾次「加一頁」，留出空白開放頁。
+  3. `firestore.rules`：`lockedPages()` 改成同一個數字。
+  4. `firebase deploy --only firestore:rules,hosting`。
+  5. 解鎖：`LOCK_ENABLED=false`（或數字歸 0）＋規則 `lockedPages()` 回 0，重新 deploy。
+- ⚠️ **只改 `data.jsx` 不改規則 = 只藏 UI**，懂 API 的人仍能寫入；兩邊都改才算鎖死。
+
 ## 資料模型（Firestore / Storage）
 - `photos/{id}`：`url, caption(=標題), page, x, y, rot, scale, uploadedAt`
 - `stickers/{key}`：`{ stickers: [...] }`。key 有三種：照片貼紙=照片 doc id；頁面貼紙=`album::pageN`（書頁）/`album::polaroid`（拍立得）。
@@ -122,4 +139,4 @@
 - 互動功能（上傳標題、文字貼紙、頁面貼紙、刪貼紙）已上線，建議實機點過一輪驗收。
 
 ---
-_最後更新：2026-06-23（拉回「減一頁」按鈕、改為一次減兩頁對頁；併入文字貼紙跑版修復）_
+_最後更新：2026-06-24（新增上線「鎖前 N 頁」分頁鎖定：照片＋排版鎖死、貼紙照開、末尾留空頁補圖）_

@@ -382,9 +382,15 @@ function Lightbox({ seed, photoUrl, stickers = [], onDeleteSticker, onClose }) {
 // UPLOAD MODAL
 // ────────────────────────────────────────
 function UploadModal({ onClose, pageOptions = { pages: [{ cindex: 0, side: "左頁", num: 1 }], primary: 0 } }) {
-  const pageOpts = (pageOptions.pages && pageOptions.pages.length)
+  const allOpts = (pageOptions.pages && pageOptions.pages.length)
     ? pageOptions.pages : [{ cindex: 0, side: "左頁", num: 1 }];
-  const [targetPage, setTargetPage] = vUseState(pageOptions.primary ?? pageOpts[0].cindex);
+  // 上線鎖定：只能上傳到「沒被鎖」的頁
+  const pageOpts = allOpts.filter(o => !isPageLocked(o.cindex));
+  const noOpenPage = pageOpts.length === 0;
+  const [targetPage, setTargetPage] = vUseState(() => {
+    if (!isPageLocked(pageOptions.primary)) return pageOptions.primary ?? allOpts[0].cindex;
+    return pageOpts[0]?.cindex ?? allOpts[0].cindex;
+  });
   const [step, setStep]     = vUseState(0);
   const [files, setFiles]   = vUseState([]);
   const [hot, setHot]       = vUseState(false);
@@ -491,15 +497,21 @@ function UploadModal({ onClose, pageOptions = { pages: [{ cindex: 0, side: "左�
             <>
               <div className="form-row">
                 <label>放到哪一頁</label>
-                <div className="row" style={{ gap: 8 }}>
-                  {pageOpts.map(o => (
-                    <button key={o.cindex}
-                      className={`chip ${targetPage === o.cindex ? "active" : ""}`}
-                      onClick={() => setTargetPage(o.cindex)}>
-                      {o.side}（P.{o.num}）
-                    </button>
-                  ))}
-                </div>
+                {noOpenPage ? (
+                  <p className="muted" style={{ margin: 0, fontSize: 13, color: "var(--pink-deep)" }}>
+                    🔒 目前翻到的跨頁已鎖定，請先翻到後面的開放頁，再上傳照片。
+                  </p>
+                ) : (
+                  <div className="row" style={{ gap: 8 }}>
+                    {pageOpts.map(o => (
+                      <button key={o.cindex}
+                        className={`chip ${targetPage === o.cindex ? "active" : ""}`}
+                        onClick={() => setTargetPage(o.cindex)}>
+                        {o.side}（P.{o.num}）
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="form-row">
                 <label>標題</label>
@@ -574,7 +586,8 @@ function UploadModal({ onClose, pageOptions = { pages: [{ cindex: 0, side: "左�
             </button>
           )}
           {step === 1 && !uploading && (
-            <button className="btn pink" onClick={doUpload}><Icon.upload /> 開始上傳</button>
+            <button className="btn pink" onClick={doUpload} disabled={noOpenPage}
+              style={{ opacity: noOpenPage ? 0.4 : 1 }}><Icon.upload /> 開始上傳</button>
           )}
           {step === 1 && uploading && <button className="btn" disabled>上傳中…</button>}
           {step === 2 && <button className="btn primary" onClick={onClose}>完成</button>}

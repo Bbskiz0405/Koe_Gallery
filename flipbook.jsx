@@ -148,20 +148,29 @@ function CollagePage({ cindex, photos, albumId, editing, selectedPhoto, onSelect
     .map((p, i) => ({ ...p, _i: i }))
     .filter(p => (p.page ?? 0) === cindex);
   const boardKey = `${albumId}::page${cindex}`;
+  const locked = isPageLocked(cindex);   // 上線鎖定：這頁的照片不可編輯/刪除
 
   return (
     <div className={`tpl-collage ${editing ? "editing" : ""}`} ref={pageRef}
-      onClick={() => { if (editing) onSelectPhoto(null); }}>
+      onClick={() => { if (editing && !locked) onSelectPhoto(null); }}>
+      {editing && locked && (
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 6,
+          fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.08em",
+          color: "var(--ink-mute)", background: "rgba(255,250,245,0.92)",
+          border: "1px solid var(--line)", borderRadius: 999, padding: "3px 9px" }}>
+          🔒 已鎖定
+        </div>
+      )}
       {here.length === 0 && (
         <div className="collage-empty">
-          {editing ? "拖曳照片自由擺放 ⟡" : "這一頁還是空白的"}
+          {locked ? "🔒 這一頁已鎖定" : editing ? "拖曳照片自由擺放 ⟡" : "這一頁還是空白的"}
         </div>
       )}
       {here.map(p => {
         const key = getPhotoKey ? getPhotoKey(p._i) : p.id;
         return (
           <CollagePhoto key={p.id} photo={p} idx={p._i}
-            editing={editing}
+            editing={editing && !locked}
             selected={selectedPhoto === p._i}
             onSelect={onSelectPhoto}
             onUpdate={onUpdatePhoto}

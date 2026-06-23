@@ -1,6 +1,26 @@
 // Shared mock data for KOE album site
 // Color gradient generator for photo placeholders — gives each photo a unique look
 
+// ── 上線鎖定設定 ────────────────────────────────────────────────
+// 鎖住「前 LOCKED_PAGES 個拼貼頁」(cindex 0 … LOCKED_PAGES-1) 的照片與排版：
+// 那幾頁的照片不能移動 / 旋轉 / 縮放 / 刪除，也不能上傳進去。貼紙不受影響。
+// 平常請保持 LOCK_ENABLED=false（對網站完全沒影響）。上線當天要鎖時：
+//   1. 把 LOCKED_PAGES 設成「目前已排好的拼貼頁總數」(看書頁右下 N / M 的頁數推算，
+//      或直接設成現在最後一個有照片的拼貼頁序號 +1)。
+//   2. 把 LOCK_ENABLED 改成 true。
+//   3. (想讓來不及的人補圖) 進「排版」在書末按幾次「加一頁」，留出空白開放頁。
+//   4. 同步把 firestore.rules 裡 lockedPages() 的回傳值改成同一個數字，再
+//      firebase deploy --only firestore:rules,hosting。
+//   只藏 UI 不改規則 → 懂 API 的人仍寫得進去；兩邊都改才算真的鎖死。
+//   要解鎖：把 LOCK_ENABLED 改回 false（或 LOCKED_PAGES=0）+ 規則改回 0 並重新 deploy。
+const LOCK_ENABLED = false;   // 上線當天改 true
+const LOCKED_PAGES = 0;       // 鎖住的拼貼頁數量 (cindex < LOCKED_PAGES 視為鎖定)
+
+// 某個拼貼頁 (0-based cindex) 是否被鎖定
+function isPageLocked(cindex) {
+  return LOCK_ENABLED && (cindex ?? 0) < LOCKED_PAGES;
+}
+
 const PALETTE_PAIRS = [
   ["#fbcfe8", "#e9d5ff"],   // pink → lavender
   ["#fde7d4", "#fbcfe8"],   // peach → pink
