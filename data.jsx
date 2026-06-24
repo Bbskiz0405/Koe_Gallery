@@ -14,7 +14,7 @@
 //   只藏 UI 不改規則 → 懂 API 的人仍寫得進去；兩邊都改才算真的鎖死。
 //   要解鎖：把 LOCK_ENABLED 改回 false（或 LOCKED_PAGES=0）+ 規則改回 0 並重新 deploy。
 const LOCK_ENABLED = true;    // 上線當天改 true
-const LOCKED_PAGES = 30;      // 鎖住的拼貼頁數量 (cindex < LOCKED_PAGES 視為鎖定)；頁碼 3–32 = cindex 0–29
+const LOCKED_PAGES = 32;      // 鎖住的拼貼頁數量 (cindex < LOCKED_PAGES 視為鎖定)；頁碼 3–34 = cindex 0–31（末攤 35–36 留開放補圖）
 
 // 某個拼貼頁 (0-based cindex) 是否被鎖定
 function isPageLocked(cindex) {
