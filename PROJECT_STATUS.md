@@ -114,6 +114,14 @@
   5. 解鎖：`LOCK_ENABLED=false`（或數字歸 0）＋規則 `lockedPages()` 回 0，重新 deploy。
 - ⚠️ **只改 `data.jsx` 不改規則 = 只藏 UI**，懂 API 的人仍能寫入；兩邊都改才算鎖死。
 
+### 正式上線鎖定（2026-06-24 已部署）
+- **已鎖前 30 個拼貼頁**（頁碼指示器 N/M 的 3–32 = `cindex 0–29`；前置 inside-cover + first-content 占頁碼 1、2，故 `頁碼 = cindex + 3`）。
+- 實際值：`data.jsx` `LOCK_ENABLED = true`、`LOCKED_PAGES = 30`；`firestore.rules` `lockedPages()` = `30`。
+- `index.html` 全部 `?v=29` → `?v=30`。
+- 已 `firebase deploy --only firestore:rules,hosting` → 規則生效，頁碼 3–32 照片寫不進、移不動、刪不掉；貼紙全程開放。
+- ⚠️ **目前 32 頁全鎖、無開放補圖頁**。要留空白頁補圖：進「排版」按「加一頁」（每次 +2 對頁，加在第 30 頁之後不會被鎖）。
+- 解鎖：`LOCK_ENABLED=false`（或 `LOCKED_PAGES=0`）＋規則 `lockedPages()` 回 `0`，重新 deploy。
+
 ## 資料模型（Firestore / Storage）
 - `photos/{id}`：`url, caption(=標題), page, x, y, rot, scale, uploadedAt`
 - `stickers/{key}`：`{ stickers: [...] }`。key 有三種：照片貼紙=照片 doc id；頁面貼紙=`album::pageN`（書頁）/`album::polaroid`（拍立得）。
@@ -139,4 +147,4 @@
 - 互動功能（上傳標題、文字貼紙、頁面貼紙、刪貼紙）已上線，建議實機點過一輪驗收。
 
 ---
-_最後更新：2026-06-24（新增上線「鎖前 N 頁」分頁鎖定：照片＋排版鎖死、貼紙照開、末尾留空頁補圖）_
+_最後更新：2026-06-24（正式上線鎖定已部署：LOCKED_PAGES=30 / 規則 lockedPages()=30，頁碼 3–32 照片鎖死、貼紙照開；尚未加開放補圖頁）_

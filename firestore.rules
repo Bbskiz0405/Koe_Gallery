@@ -5,7 +5,7 @@ service cloud.firestore {
     // 上線鎖定：鎖住「前 lockedPages() 個拼貼頁」(page 0 … lockedPages()-1)。
     // 那幾頁的照片不能新增/移動/刪除。回傳 0 = 完全不鎖（與上線前行為相同）。
     // 上線當天把這個數字改成與 data.jsx 的 LOCKED_PAGES 相同，再 deploy。
-    function lockedPages() { return 0; }
+    function lockedPages() { return 30; }
     function pageUnlocked(p) {
       return lockedPages() == 0 || (p is number && p >= lockedPages());
     }
